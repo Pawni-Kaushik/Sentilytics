@@ -91,6 +91,7 @@ div[data-testid="stPageLink"] {
 
 div[data-testid="stPageLink"] a {
     color: var(--text-muted) !important;
+    opacity: 1 !important;
     text-decoration: none !important;
     font-size: 0.92rem;
     font-weight: 500;
@@ -99,6 +100,10 @@ div[data-testid="stPageLink"] a {
     width: 100%;
     justify-content: center;
     transition: all 0.15s ease;
+}
+
+div[data-testid="stPageLink"] a * {
+    opacity: 1 !important;
 }
 
 div[data-testid="stPageLink"] a:hover {
@@ -111,7 +116,9 @@ div[data-testid="stPageLink"] a[aria-current="page"] {
     background: var(--brand-glow) !important;
 }
 
-div[data-testid="stPageLink"] a p {
+div[data-testid="stPageLink"] a p,
+div[data-testid="stPageLink"] a span,
+div[data-testid="stPageLink"] a div {
     color: inherit !important;
     font-weight: inherit !important;
 }
