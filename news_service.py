@@ -25,6 +25,22 @@ at https://gnews.io. Add it to .env locally as:
 ...and to Streamlit Cloud's Settings -> Secrets when deployed:
 
     GNEWS_API_KEY = "your_key_here"
+
+IMPORTANT -- the free plan's biggest real-world limitation is NOT "the
+key is wrong", it's the 100-requests/day cap. Once that's used up,
+GNews returns an error for EVERY request until it resets at 00:00 UTC.
+If you were testing earlier in the day and some keywords "still show
+results" while brand-new ones fail, that's almost always this: the
+working ones are old results still sitting in session_state (see
+pages/6_Live_News_Search.py), not a fresh call. This module now
+reports exactly which of these happened instead of collapsing them
+into one generic message:
+  - "missing_key"    -> GNEWS_API_KEY isn't set anywhere Streamlit can see
+  - "invalid_key"    -> key is set but GNews rejected it (401)
+  - "quota_exceeded" -> daily 100-request cap hit (403 / 429)
+  - "network_error"  -> request timed out / couldn't reach GNews
+  - None (success)   -> call worked; articles list may still be empty
+                        if GNews simply has no coverage for that query
 """
 
 import os
@@ -33,88 +49,82 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GNEWS_API_KEY = os.getenv("GNEWS_API_KEY")
 GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search"
+
+
+def _get_api_key():
+    """
+    Reads the key from a plain environment variable first (covers local
+    .env via python-dotenv, and Streamlit Cloud's root-level secrets,
+    which Streamlit also injects into os.environ). Falls back to
+    st.secrets directly in case it was set under a nested section, or
+    the environment injection didn't happen for some reason.
+    """
+    key = os.getenv("GNEWS_API_KEY")
+    if key:
+        return key.strip()
+
+    try:
+        import streamlit as st
+        if "GNEWS_API_KEY" in st.secrets:
+            return str(st.secrets["GNEWS_API_KEY"]).strip()
+    except Exception:
+        pass
+
+    return None
 
 
 def search_news(query: str, max_results: int = 10, lang: str = "en", country: str = "in"):
     """
     Search GNews for articles about a keyword/brand/topic.
 
-    Args:
-        query: search term, e.g. "Maruti Suzuki"
-        max_results: how many articles to fetch (GNews free tier caps
-            a single request at 10)
-        lang: article language code
-        country: country code to bias results toward (e.g. "in" for
-            India-relevant coverage of a query like "Maruti Suzuki")
-
     Returns:
-        (articles, error) where articles is:
-        [
-            {
-                "title": "...",
-                "url": "...",
-                "preview": "...",       # short description/snippet
-                "content": "...",       # longer body snippet (may be
-                                         # truncated by GNews on the free tier)
-                "source": "...",
-                "published_at": "...",
-            },
-            ...
-        ]
-        and error is None on success, or one of:
-        "not_configured" (no API key set), "rate_limited" (GNews 429 --
-        free-tier daily/burst cap hit), "unauthorized" (GNews 401/403 --
-        bad or unactivated key), "http_error" (other HTTP failure), or
-        "network_error" (timeout, DNS, connection issue, etc.)
+        (articles, error_code)
+
+        articles: list of dicts (title, url, preview, content, source,
+            published_at) -- possibly empty even on success, if GNews
+            has no matching coverage.
+        error_code: None on a successful API call (regardless of how
+            many articles came back), otherwise one of:
+            "missing_key", "invalid_key", "quota_exceeded",
+            "network_error"
     """
 
-    if not GNEWS_API_KEY:
-        print("\n========================")
-        print("NEWS SEARCH FAILED")
-        print("========================")
-        print("GNEWS_API_KEY is not set. Add it to your .env file locally, "
-              "or to Streamlit Cloud's Settings -> Secrets when deployed.")
-        print("========================\n")
-        return [], "not_configured"
+    api_key = _get_api_key()
+    if not api_key:
+        print("NEWS SEARCH FAILED: GNEWS_API_KEY is not set (checked os.environ and st.secrets).")
+        return [], "missing_key"
 
     params = {
         "q": query,
         "lang": lang,
         "country": country,
         "max": min(max_results, 10),
-        "apikey": GNEWS_API_KEY,
+        "apikey": api_key,
     }
 
     try:
         response = requests.get(GNEWS_SEARCH_URL, params=params, timeout=15)
-        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"NEWS SEARCH FAILED (network error): {e}")
+        return [], "network_error"
+
+    if response.status_code == 401:
+        print(f"NEWS SEARCH FAILED (401 invalid key): {response.text[:300]}")
+        return [], "invalid_key"
+
+    if response.status_code in (403, 429):
+        print(f"NEWS SEARCH FAILED ({response.status_code} quota/rate limit): {response.text[:300]}")
+        return [], "quota_exceeded"
+
+    if not response.ok:
+        print(f"NEWS SEARCH FAILED ({response.status_code}): {response.text[:300]}")
+        return [], "network_error"
+
+    try:
         data = response.json()
-
-    except requests.exceptions.HTTPError as e:
-        # Distinguish WHY the request failed -- a 429 (rate limit) and a
-        # 401/403 (bad/missing key) need very different fixes from the
-        # user, and lumping them into one generic "check your API key"
-        # message (as this used to) sends people debugging the wrong thing.
-        status = e.response.status_code if e.response is not None else None
-        print("\n========================")
-        print("NEWS SEARCH FAILED")
-        print("========================")
-        print(e)
-        print("========================\n")
-        if status == 429:
-            return [], "rate_limited"
-        if status in (401, 403):
-            return [], "unauthorized"
-        return [], "http_error"
-
-    except Exception as e:
-        print("\n========================")
-        print("NEWS SEARCH FAILED")
-        print("========================")
-        print(e)
-        print("========================\n")
+    except ValueError as e:
+        print(f"NEWS SEARCH FAILED (bad JSON): {e}")
         return [], "network_error"
 
     articles = []
@@ -128,25 +138,15 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
             "published_at": item.get("publishedAt", ""),
         })
 
-    print("\n========================")
-    print("NEWS SEARCH")
-    print("========================")
-    print(f"Articles Found: {len(articles)}")
-    print("========================")
-
-    for item in articles:
-        print(item)
-
-    print()
-
+    print(f"NEWS SEARCH OK -- {len(articles)} article(s) for '{query}'")
     return articles, None
 
 
 if __name__ == "__main__":
     # Quick manual test
-    results, error = search_news("Maruti Suzuki", max_results=5)
-    if error:
-        print(f"Search failed: {error}")
+    results, err = search_news("Maruti Suzuki", max_results=5)
+    if err:
+        print("ERROR:", err)
     for r in results:
         print("\n" + "=" * 60)
         print(r["title"])

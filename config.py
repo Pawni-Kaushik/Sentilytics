@@ -59,13 +59,21 @@ COLORS = {
     "dark_text": "#E9EBF0",
     "dark_text_muted": "#8B93A3",
     "dark_border": "#252B37",
+    # Glow/shadow intensity tuned per-mode: a 35%-opacity glow that
+    # reads as a nice neon accent on a near-black background turns
+    # into a muddy smear on white, so light mode uses softer values.
+    "dark_glow_alpha": "0.35",
 
-    "light_bg": "#FAF9F7",
+    # Light mode: a slightly deeper off-white than pure white so
+    # surfaces actually separate from the page background, plus a
+    # darker border/muted-text so elements don't wash out together.
+    "light_bg": "#F3F1EC",
     "light_surface": "#FFFFFF",
-    "light_surface_alt": "#F3F1ED",
+    "light_surface_alt": "#E9E6DE",
     "light_text": "#1A1A1B",
-    "light_text_muted": "#5F6672",
-    "light_border": "#E4E2DD",
+    "light_text_muted": "#555C68",
+    "light_border": "#D8D4CB",
+    "light_glow_alpha": "0.16",
 }
 
 FONTS = {

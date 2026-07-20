@@ -67,6 +67,7 @@ def load_css():
             "__TEXT__": COLORS["dark_text"],
             "__TEXT_MUTED__": COLORS["dark_text_muted"],
             "__BORDER__": COLORS["dark_border"],
+            "__GLOW_ALPHA__": COLORS["dark_glow_alpha"],
         }
     else:
         tokens = {
@@ -76,6 +77,7 @@ def load_css():
             "__TEXT__": COLORS["light_text"],
             "__TEXT_MUTED__": COLORS["light_text_muted"],
             "__BORDER__": COLORS["light_border"],
+            "__GLOW_ALPHA__": COLORS["light_glow_alpha"],
         }
 
     css = CSS_PATH.read_text()

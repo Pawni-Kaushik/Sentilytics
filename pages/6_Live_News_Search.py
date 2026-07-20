@@ -90,29 +90,37 @@ if search_clicked:
         with st.spinner(f"Searching news for '{query}'..."):
             articles, error = search_news(query, max_results=max_articles)
 
-        if error:
-            error_messages = {
-                "not_configured": (
-                    "GNEWS_API_KEY isn't set. Add it to your .env file locally, "
-                    "or to Streamlit Cloud's Settings -> Secrets when deployed."
-                ),
-                "rate_limited": (
-                    "GNews's free-tier rate limit was hit (too many requests in a short "
-                    "time, or the daily cap of ~100 requests). Your API key is fine -- "
-                    "just wait a bit and try again, or avoid rapid repeated searches."
-                ),
-                "unauthorized": (
-                    "GNews rejected the API key (401/403). Double-check it was copied "
-                    "correctly with no extra spaces, and that the key is activated "
-                    "(some GNews signups require confirming your email first)."
-                ),
-                "http_error": "GNews returned an unexpected error. Try again in a moment.",
-                "network_error": "Couldn't reach GNews (network/timeout issue). Try again in a moment.",
-            }
-            st.error(error_messages.get(error, "News search failed for an unknown reason."))
+        if error == "missing_key":
+            st.error(
+                "GNEWS_API_KEY isn't set. Add it locally to a `.env` file, or on Streamlit "
+                "Community Cloud go to your app -> Settings -> Secrets and add:\n\n"
+                "`GNEWS_API_KEY = \"your-real-key-here\"`"
+            )
+            st.session_state.pop("live_search_results", None)
+        elif error == "invalid_key":
+            st.error(
+                "GNews rejected this API key (401 Unauthorized). Double-check it was copied "
+                "correctly (no extra spaces/quotes) from https://gnews.io/dashboard, and that "
+                "the same key is saved in Streamlit Cloud's Secrets."
+            )
+            st.session_state.pop("live_search_results", None)
+        elif error == "quota_exceeded":
+            st.warning(
+                "GNews's free-tier daily limit (100 requests) has been reached for this key. "
+                "It resets at **00:00 UTC**. This is also why older searches from earlier today "
+                "might still show results here -- those are saved from before the limit was hit, "
+                "not a fresh call. Try again after the reset, or reuse a keyword you already "
+                "searched today."
+            )
+            st.session_state.pop("live_search_results", None)
+        elif error == "network_error":
+            st.error("Couldn't reach GNews right now (network/timeout issue). Please try again.")
             st.session_state.pop("live_search_results", None)
         elif not articles:
-            st.error(f"No news results found for '{query}'. Try a different keyword.")
+            st.info(
+                f"The search worked, but GNews doesn't have live coverage for '{query}' right "
+                "now. Try a broader or more common keyword."
+            )
             st.session_state.pop("live_search_results", None)
         else:
             all_rows = []
