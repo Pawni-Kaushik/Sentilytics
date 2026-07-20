@@ -1,0 +1,9 @@
+streamlit>=1.36
+pandas
+numpy
+scikit-learn
+tensorflow-cpu
+nltk
+plotly
+python-dotenv
+requests

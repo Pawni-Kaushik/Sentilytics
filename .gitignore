@@ -1,0 +1,17 @@
+# Secrets -- never commit these
+.env
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Large model artifacts (optional -- uncomment if you don't want to
+# commit trained models to git; keep commented if you DO want them
+# versioned, e.g. for submitting the project)
+# models/*.keras
+# models/*.pkl
+
+# Streamlit
+.streamlit/secrets.toml
+users.json 

@@ -1,0 +1,572 @@
+/* ==========================================================
+   Sentilytics — Sentiment Analyzer -- stylesheet template
+   Placeholders like __BG__ are filled in by utils/helpers.py
+   load_css() depending on the active dark/light mode.
+   ========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+    --bg: __BG__;
+    --surface: __SURFACE__;
+    --surface-alt: __SURFACE_ALT__;
+    --text: __TEXT__;
+    --text-muted: __TEXT_MUTED__;
+    --border: __BORDER__;
+
+    --brand: #FF4500;
+    --brand-glow: rgba(255, 69, 0, 0.35);
+    --positive: #2FB380;
+    --positive-glow: rgba(47, 179, 128, 0.35);
+    --negative: #7193FF;
+    --negative-glow: rgba(113, 147, 255, 0.35);
+    --neutral: #C9A227;
+    --neutral-glow: rgba(201, 162, 39, 0.35);
+
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ---------------- Base app ---------------- */
+.stApp {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+}
+
+html, body, [class*="css"] {
+    font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, .display-font {
+    font-family: var(--font-display) !important;
+    letter-spacing: -0.01em;
+}
+
+/* Hide default Streamlit chrome for a cleaner SaaS look */
+#MainMenu, footer, header {
+    visibility: hidden;
+}
+
+/* ---------------- Top navbar ---------------- */
+.topnav-brand-row {
+    padding-top: 6px;
+}
+
+.brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+}
+
+.brand .arrow {
+    color: var(--brand);
+    font-size: 1.35rem;
+}
+
+.user-badge {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.topnav-divider {
+    border-bottom: 1px solid var(--border);
+    margin: 4px 0 20px 0;
+}
+
+/* Real Streamlit page-link nav pills (replaces the old raw <a> tags --
+   using st.page_link keeps client-side routing intact so the login
+   session survives navigation). */
+div[data-testid="stPageLink"] {
+    display: flex;
+    justify-content: center;
+}
+
+div[data-testid="stPageLink"] a {
+    color: var(--text-muted) !important;
+    text-decoration: none !important;
+    font-size: 0.92rem;
+    font-weight: 500;
+    padding: 7px 14px !important;
+    border-radius: 8px !important;
+    width: 100%;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+div[data-testid="stPageLink"] a:hover {
+    color: var(--text) !important;
+    background: var(--surface-alt) !important;
+}
+
+div[data-testid="stPageLink"] a[aria-current="page"] {
+    color: var(--brand) !important;
+    background: var(--brand-glow) !important;
+}
+
+div[data-testid="stPageLink"] a p {
+    color: inherit !important;
+    font-weight: inherit !important;
+}
+
+/* ---------------- Auth (Login / Register) ---------------- */
+.auth-wrap {
+    max-width: 420px;
+    margin: 40px auto 0 auto;
+}
+
+.auth-eyebrow {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.auth-title {
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 28px;
+}
+
+.auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 30px 24px 30px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+}
+
+/* ---------------- Glassmorphism cards ---------------- */
+.glass-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+
+.glass-card:hover {
+    border-color: var(--brand);
+    transition: border-color 0.2s ease;
+}
+
+/* ---------------- Hero ---------------- */
+.hero-wrap {
+    padding: 56px 12px 40px 12px;
+    text-align: center;
+}
+
+.hero-eyebrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand);
+    background: var(--brand-glow);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+}
+
+.hero-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1.08;
+    margin: 0 0 18px 0;
+    color: var(--text);
+}
+
+.hero-title .accent {
+    color: var(--brand);
+}
+
+.hero-subtitle {
+    font-size: 1.08rem;
+    color: var(--text-muted);
+    max-width: 640px;
+    margin: 0 auto 32px auto;
+    line-height: 1.6;
+}
+
+/* ---------------- Buttons ---------------- */
+.cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--brand), #ff6a33);
+    color: white !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 14px 32px;
+    border-radius: 12px;
+    text-decoration: none;
+    box-shadow: 0 8px 24px var(--brand-glow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px var(--brand-glow);
+}
+
+div.stButton > button {
+    background: linear-gradient(135deg, var(--brand), #ff6a33);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 10px 22px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 16px var(--brand-glow);
+}
+
+div.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px var(--brand-glow);
+    color: white;
+}
+
+/* ---------------- Sentiment result cards ---------------- */
+.result-card {
+    border-radius: 20px;
+    padding: 36px;
+    text-align: center;
+    border: 1px solid var(--border);
+    margin: 18px 0;
+}
+
+.result-card .vote-arrow {
+    font-size: 3.4rem;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.result-card .result-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+}
+
+.result-card .result-sub {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+}
+
+.result-positive {
+    background: radial-gradient(circle at top, var(--positive-glow), transparent 70%);
+    box-shadow: 0 0 40px var(--positive-glow);
+    border-color: var(--positive);
+}
+.result-positive .vote-arrow, .result-positive .result-label { color: var(--positive); }
+
+.result-negative {
+    background: radial-gradient(circle at top, var(--negative-glow), transparent 70%);
+    box-shadow: 0 0 40px var(--negative-glow);
+    border-color: var(--negative);
+}
+.result-negative .vote-arrow, .result-negative .result-label { color: var(--negative); }
+
+.result-neutral {
+    background: radial-gradient(circle at top, var(--neutral-glow), transparent 70%);
+    box-shadow: 0 0 40px var(--neutral-glow);
+    border-color: var(--neutral);
+}
+.result-neutral .vote-arrow, .result-neutral .result-label { color: var(--neutral); }
+
+/* ---------------- Stat / metric tiles ---------------- */
+.stat-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-tile .stat-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--brand);
+}
+
+.stat-tile .stat-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 4px;
+}
+
+/* ---------------- Developer cards (About page) ---------------- */
+.dev-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px;
+    text-align: center;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.dev-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--brand);
+}
+
+.dev-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), #ff6a33);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: white;
+    margin: 0 auto 16px auto;
+}
+
+.dev-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin-bottom: 4px;
+}
+
+.dev-role {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* ---------------- Footer ---------------- */
+.app-footer {
+    text-align: center;
+    padding: 32px 0 16px 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+}
+
+/* ---------------- Pipeline steps ---------------- */
+.pipeline-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.pipeline-step .step-num {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--brand);
+    font-size: 1.1rem;
+    min-width: 28px;
+}
+
+/* ==========================================================
+   Native Streamlit widget theming
+   Streamlit's built-in components (sidebar, text areas, inputs,
+   selects, buttons, dataframes) use their own internal styling by
+   default and do NOT automatically follow custom CSS variables like
+   --bg/--surface/--text. Each one needs to be explicitly re-themed
+   here so light/dark mode applies everywhere, not just in custom
+   markdown blocks.
+   ========================================================== */
+
+/* Native sidebar is hidden (st.navigation(..., position="hidden")) --
+   the custom top navbar above is the single source of navigation, so
+   there's no more mismatched/duplicate nav list on the left. */
+
+/* ---------------- Text areas & text inputs ---------------- */
+.stTextArea textarea,
+.stTextInput input {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+}
+
+.stTextArea textarea::placeholder,
+.stTextInput input::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.7;
+}
+
+.stTextArea textarea:focus,
+.stTextInput input:focus {
+    border-color: var(--brand) !important;
+    box-shadow: 0 0 0 1px var(--brand) !important;
+}
+
+/* ---------------- Select boxes (BaseWeb) ---------------- */
+.stSelectbox div[data-baseweb="select"] > div {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+div[data-baseweb="popover"] li,
+div[data-baseweb="menu"] {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+/* ---------------- Buttons ---------------- */
+.stButton button {
+    background: var(--surface-alt) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+}
+
+.stButton button:hover {
+    border-color: var(--brand) !important;
+    color: var(--brand) !important;
+}
+
+.stButton button[kind="primary"] {
+    background: var(--brand) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+}
+
+/* ---------------- Dataframes / tables ---------------- */
+/* IMPORTANT: only theme the OUTER container here, never every nested
+   div -- Streamlit's dataframe widget is canvas-rendered internally
+   with many wrapper divs for virtualized scrolling; forcing a
+   background/color on all of them (as an earlier version of this file
+   did) breaks that rendering and makes the table appear empty. */
+[data-testid="stDataFrame"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+}
+
+/* ---------------- File uploader, radio, checkbox, slider labels ---------------- */
+.stFileUploader, .stRadio, .stCheckbox, .stSlider {
+    color: var(--text) !important;
+}
+
+.stFileUploader section {
+    background: var(--surface) !important;
+    border: 1px dashed var(--border) !important;
+}
+
+/* ---------------- Metric widgets ---------------- */
+[data-testid="stMetric"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+}
+
+[data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
+    color: var(--text) !important;
+}
+
+/* ---------------- Tech stack badges ---------------- */
+.badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0 4px 0;
+}
+
+.tech-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+/* ---------------- Section label ---------------- */
+.section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 6px;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 640px) {
+    .topnav { flex-direction: column; gap: 10px; align-items: flex-start; }
+    .hero-title { font-size: 2rem; }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+}
+
+/* ---------------------------------------------------------------
+   Native Streamlit icon fix (light/dark mode)
+   ---------------------------------------------------------------
+   There's no .streamlit/config.toml in this project, so Streamlit's
+   OWN native theme (which colors its built-in icons -- selectbox
+   arrows, checkboxes, expander chevrons, download-button icons,
+   dataframe toolbar, the Plotly chart toolbar, etc.) follows the
+   user's BROWSER/OS dark-mode setting, completely independent of the
+   app's own dark_mode toggle above (session_state, custom --bg/--text
+   vars). If someone's OS is in dark mode and they click this app's
+   "Light" button, only the custom background/text flips -- Streamlit's
+   native icons are still themed for a dark background and stay
+   light/white, so they disappear against the new light background.
+
+   Fix: force every native icon-bearing element to use OUR --text
+   variable (which already flips correctly with the toggle) instead of
+   whatever color Streamlit's own theme gave it, so icons always match
+   the app's actual current background regardless of OS/browser theme.
+   ---------------------------------------------------------------- */
+[data-testid="stIconMaterial"],
+[data-testid="stExpanderToggleIcon"],
+[data-testid="stCheckbox"] svg,
+[data-testid="stFileUploaderDropzoneIcon"],
+[data-testid="baseButton-header"] svg,
+div[data-baseweb="select"] svg,
+div[data-baseweb="slider"] svg,
+[data-testid="stDataFrame"] svg,
+[data-testid="stElementToolbar"] svg {
+    fill: var(--text) !important;
+    color: var(--text) !important;
+}
+
+/* Plotly chart toolbar (camera/zoom/pan icons, shown on hover) --
+   Plotly renders these as inline SVG paths, not CSS-colorable by
+   default, so this targets its own icon-button classes directly. */
+.modebar-btn path {
+    fill: var(--text-muted) !important;
+}
+.modebar-btn:hover path {
+    fill: var(--text) !important;
+}
+.modebar {
+    background: transparent !important;
+}
