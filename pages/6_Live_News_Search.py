@@ -88,13 +88,31 @@ if search_clicked:
         st.warning("Please enter a keyword to search for.")
     else:
         with st.spinner(f"Searching news for '{query}'..."):
-            articles = search_news(query, max_results=max_articles)
+            articles, error = search_news(query, max_results=max_articles)
 
-        if not articles:
-            st.error(
-                "No news results found (or the search failed -- check that GNEWS_API_KEY "
-                "is set correctly in your .env file / Streamlit secrets)."
-            )
+        if error:
+            error_messages = {
+                "not_configured": (
+                    "GNEWS_API_KEY isn't set. Add it to your .env file locally, "
+                    "or to Streamlit Cloud's Settings -> Secrets when deployed."
+                ),
+                "rate_limited": (
+                    "GNews's free-tier rate limit was hit (too many requests in a short "
+                    "time, or the daily cap of ~100 requests). Your API key is fine -- "
+                    "just wait a bit and try again, or avoid rapid repeated searches."
+                ),
+                "unauthorized": (
+                    "GNews rejected the API key (401/403). Double-check it was copied "
+                    "correctly with no extra spaces, and that the key is activated "
+                    "(some GNews signups require confirming your email first)."
+                ),
+                "http_error": "GNews returned an unexpected error. Try again in a moment.",
+                "network_error": "Couldn't reach GNews (network/timeout issue). Try again in a moment.",
+            }
+            st.error(error_messages.get(error, "News search failed for an unknown reason."))
+            st.session_state.pop("live_search_results", None)
+        elif not articles:
+            st.error(f"No news results found for '{query}'. Try a different keyword.")
             st.session_state.pop("live_search_results", None)
         else:
             all_rows = []

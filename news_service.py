@@ -50,6 +50,7 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
             India-relevant coverage of a query like "Maruti Suzuki")
 
     Returns:
+        (articles, error) where articles is:
         [
             {
                 "title": "...",
@@ -62,6 +63,11 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
             },
             ...
         ]
+        and error is None on success, or one of:
+        "not_configured" (no API key set), "rate_limited" (GNews 429 --
+        free-tier daily/burst cap hit), "unauthorized" (GNews 401/403 --
+        bad or unactivated key), "http_error" (other HTTP failure), or
+        "network_error" (timeout, DNS, connection issue, etc.)
     """
 
     if not GNEWS_API_KEY:
@@ -71,7 +77,7 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
         print("GNEWS_API_KEY is not set. Add it to your .env file locally, "
               "or to Streamlit Cloud's Settings -> Secrets when deployed.")
         print("========================\n")
-        return []
+        return [], "not_configured"
 
     params = {
         "q": query,
@@ -86,13 +92,30 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
         response.raise_for_status()
         data = response.json()
 
+    except requests.exceptions.HTTPError as e:
+        # Distinguish WHY the request failed -- a 429 (rate limit) and a
+        # 401/403 (bad/missing key) need very different fixes from the
+        # user, and lumping them into one generic "check your API key"
+        # message (as this used to) sends people debugging the wrong thing.
+        status = e.response.status_code if e.response is not None else None
+        print("\n========================")
+        print("NEWS SEARCH FAILED")
+        print("========================")
+        print(e)
+        print("========================\n")
+        if status == 429:
+            return [], "rate_limited"
+        if status in (401, 403):
+            return [], "unauthorized"
+        return [], "http_error"
+
     except Exception as e:
         print("\n========================")
         print("NEWS SEARCH FAILED")
         print("========================")
         print(e)
         print("========================\n")
-        return []
+        return [], "network_error"
 
     articles = []
     for item in data.get("articles", []):
@@ -116,12 +139,14 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
 
     print()
 
-    return articles
+    return articles, None
 
 
 if __name__ == "__main__":
     # Quick manual test
-    results = search_news("Maruti Suzuki", max_results=5)
+    results, error = search_news("Maruti Suzuki", max_results=5)
+    if error:
+        print(f"Search failed: {error}")
     for r in results:
         print("\n" + "=" * 60)
         print(r["title"])
