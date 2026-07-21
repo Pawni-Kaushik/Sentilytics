@@ -44,12 +44,67 @@ into one generic message:
 """
 
 import os
+import json
+from pathlib import Path
+from datetime import datetime, timezone
+
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 GNEWS_SEARCH_URL = "https://gnews.io/api/v4/search"
+
+# GNews's free plan allows 100 requests/day, resetting at 00:00 UTC.
+# Bump this if you upgrade plans.
+DAILY_REQUEST_LIMIT = 100
+
+# GNews's API does not return any "requests remaining" header, so there
+# is no way to ask GNews directly. Instead this app counts its own
+# calls locally in a small JSON file, reset whenever the UTC date
+# changes. Caveat: this lives inside the app's own container, so it
+# resets to 0 if the app restarts, redeploys, or wakes from sleep --
+# treat it as a close estimate, not the authoritative number. The
+# exact count is always visible at https://gnews.io/dashboard.
+_USAGE_FILE = Path(__file__).parent / "gnews_usage.json"
+
+
+def _today_utc_str():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _load_usage():
+    data = {}
+    if _USAGE_FILE.exists():
+        try:
+            data = json.loads(_USAGE_FILE.read_text())
+        except Exception:
+            data = {}
+    if data.get("date") != _today_utc_str():
+        data = {"date": _today_utc_str(), "count": 0}
+    return data
+
+
+def _record_request():
+    """Called once per actual call made to GNews (any response received)."""
+    data = _load_usage()
+    data["count"] = data.get("count", 0) + 1
+    try:
+        _USAGE_FILE.write_text(json.dumps(data))
+    except Exception as e:
+        print(f"Could not persist GNews usage counter: {e}")
+
+
+def get_usage_today():
+    """
+    Returns (used, remaining, limit) for today (UTC), based on this
+    app's own local counter of calls it has made -- see the caveat in
+    the module docstring above about container restarts resetting this.
+    """
+    data = _load_usage()
+    used = data.get("count", 0)
+    remaining = max(DAILY_REQUEST_LIMIT - used, 0)
+    return used, remaining, DAILY_REQUEST_LIMIT
 
 
 def _get_api_key():
@@ -108,6 +163,10 @@ def search_news(query: str, max_results: int = 10, lang: str = "en", country: st
     except requests.exceptions.RequestException as e:
         print(f"NEWS SEARCH FAILED (network error): {e}")
         return [], "network_error"
+
+    # A response was actually received from GNews, so this counts
+    # against the daily quota regardless of status code.
+    _record_request()
 
     if response.status_code == 401:
         print(f"NEWS SEARCH FAILED (401 invalid key): {response.text[:300]}")

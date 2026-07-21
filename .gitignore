@@ -14,4 +14,7 @@ __pycache__/
 
 # Streamlit
 .streamlit/secrets.toml
-users.json 
+
+# Runtime-generated GNews usage counter (see news_service.py) -- not
+# meant to be committed, it's regenerated fresh on each deploy anyway
+gnews_usage.json

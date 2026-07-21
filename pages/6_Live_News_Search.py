@@ -34,7 +34,7 @@ from utils.loader import load_model_artifacts
 from utils.predictor import predict_long_text
 from utils.charts import sentiment_pie_chart, word_cloud_chart
 
-from news_service import search_news
+from news_service import search_news, get_usage_today
 
 init_session_state()
 load_css()
@@ -48,6 +48,31 @@ st.markdown(
     "live news coverage (via the GNews API) and runs each article's title and "
     "description through the trained sentiment model.</p>",
     unsafe_allow_html=True,
+)
+
+# ---------------------------------------------------------------
+# GNews's API doesn't expose a "requests remaining" header, so there's
+# no way to ask GNews directly how much quota is left. This tracks the
+# app's own calls locally instead (see get_usage_today() in
+# news_service.py) -- accurate almost all the time, but can reset to 0
+# if the app container restarts/redeploys/sleeps. For the exact,
+# authoritative count, check https://gnews.io/dashboard.
+# ---------------------------------------------------------------
+_used, _remaining, _limit = get_usage_today()
+st.markdown(
+    f"<div style='display:flex;justify-content:space-between;align-items:center;"
+    f"margin-bottom:4px;'>"
+    f"<span style='color:var(--text-muted);font-size:0.85rem;'>GNews requests used "
+    f"today (this app's estimate)</span>"
+    f"<span style='color:var(--text);font-weight:600;font-size:0.85rem;'>"
+    f"{_used}/{_limit} used &middot; {_remaining} left</span>"
+    f"</div>",
+    unsafe_allow_html=True,
+)
+st.progress(min(_used / _limit, 1.0) if _limit else 0.0)
+st.caption(
+    "Resets at 00:00 UTC. Tracked locally by this app, so a restart/redeploy/sleep "
+    "can reset it -- gnews.io/dashboard always has the exact number."
 )
 
 with st.expander("ℹ️ How this works"):
