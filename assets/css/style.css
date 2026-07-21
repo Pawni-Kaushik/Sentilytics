@@ -474,6 +474,15 @@ div[data-baseweb="menu"] {
     border-radius: 10px !important;
 }
 
+/* ---------------- Progress bar (Live Search loading indicator) ---------------- */
+[data-testid="stProgress"] > div > div > div {
+    background-color: var(--brand) !important;
+}
+
+[data-testid="stProgress"] > div > div {
+    background-color: var(--surface-alt) !important;
+}
+
 /* ---------------- File uploader, radio, checkbox, slider labels ---------------- */
 .stFileUploader, .stRadio, .stCheckbox, .stSlider {
     color: var(--text) !important;

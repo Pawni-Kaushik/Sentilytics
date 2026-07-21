@@ -124,12 +124,21 @@ if search_clicked:
             st.session_state.pop("live_search_results", None)
         else:
             all_rows = []
-            for item in articles:
+            total = len(articles)
+            progress_text = st.empty()
+            progress_bar = st.progress(0)
+            for i, item in enumerate(articles):
+                progress_text.markdown(
+                    f"<p style='color:var(--text-muted)'>Analyzing article {i + 1} of "
+                    f"{total} through the sentiment model...</p>",
+                    unsafe_allow_html=True,
+                )
                 # Combine description + content for the richest text
                 # available; GNews truncates "content" on the free tier,
                 # so this may sometimes just be the description.
                 combined_text = f"{item['title']} {item['preview']} {item['content']}".strip()
                 if not combined_text:
+                    progress_bar.progress((i + 1) / total)
                     continue
 
                 result = predict_long_text(combined_text, model, tokenizer, encoder)
@@ -144,6 +153,10 @@ if search_clicked:
                     "url": item["url"],
                     "source": item.get("source", ""),
                 })
+                progress_bar.progress((i + 1) / total)
+
+            progress_text.empty()
+            progress_bar.empty()
 
             if not all_rows:
                 st.error("Articles were found, but none had usable text. Try a different keyword.")
