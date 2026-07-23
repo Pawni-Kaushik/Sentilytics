@@ -27,7 +27,10 @@ METRICS_PATH = MODELS_DIR / "precomputed_metrics_v2.json"
 
 DATASET_PATH = DATASET_DIR / "reddit_sentiment_dataset_v9.csv"
 HISTORY_PATH = BASE_DIR / "prediction_history.csv"
-USERS_PATH = BASE_DIR / "users.json"
+# NOTE: user accounts used to live in a local users.json, but Streamlit
+# Community Cloud's disk is ephemeral (wiped on sleep/restart/redeploy),
+# so accounts silently disappeared. Auth now uses a hosted Postgres DB
+# instead -- see utils/auth.py and DEPLOYMENT.md.
 
 # --- NER model artifacts (person-name detection, used to mask names
 #     before sentiment analysis, e.g. "Happy Singh is sad") ---

@@ -1,38 +1,44 @@
 """
 utils/auth.py
 ---------------
-Local username/password authentication for the app.
+Username/password authentication for the app.
 
-Users are stored in users.json (BASE_DIR/users.json) as:
-    { "username": {"salt": "...", "hash": "...", "created": "..."} }
+Users are stored in a hosted Postgres database (see DEPLOYMENT.md for
+setup), NOT a local file. Streamlit Community Cloud's filesystem is
+ephemeral -- any file written locally (like the old users.json) gets
+wiped whenever the app container sleeps and wakes back up, restarts,
+or is redeployed. A real database survives all of that, which a local
+JSON file (or several of them) never would.
 
 Passwords are never stored in plain text -- PBKDF2-HMAC-SHA256 with a
 per-user random salt is used for hashing.
 """
 
-import json
 import hashlib
 import secrets
 from datetime import datetime
 
 import streamlit as st
-
-from config import USERS_PATH
+from sqlalchemy import text
 
 PBKDF2_ITERATIONS = 200_000
 
 
-def _load_users() -> dict:
-    if USERS_PATH.exists():
-        try:
-            return json.loads(USERS_PATH.read_text())
-        except Exception:
-            return {}
-    return {}
-
-
-def _save_users(users: dict):
-    USERS_PATH.write_text(json.dumps(users, indent=2))
+def _get_conn():
+    """Returns a Streamlit SQL connection, creating the users table
+    on first use if it doesn't exist yet."""
+    conn = st.connection("sql", type="sql")
+    with conn.session as s:
+        s.execute(text("""
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                salt TEXT NOT NULL,
+                hash TEXT NOT NULL,
+                created TEXT NOT NULL
+            )
+        """))
+        s.commit()
+    return conn
 
 
 def _hash_password(password: str, salt: str) -> str:
@@ -42,7 +48,13 @@ def _hash_password(password: str, salt: str) -> str:
 
 
 def username_exists(username: str) -> bool:
-    return username.strip().lower() in _load_users()
+    conn = _get_conn()
+    df = conn.query(
+        "SELECT 1 FROM users WHERE username = :u",
+        params={"u": username.strip().lower()},
+        ttl=0,
+    )
+    return not df.empty
 
 
 def register_user(username: str, password: str) -> tuple[bool, str]:
@@ -56,29 +68,42 @@ def register_user(username: str, password: str) -> tuple[bool, str]:
     if len(password) < 6:
         return False, "Password must be at least 6 characters."
 
-    users = _load_users()
-    if username in users:
+    conn = _get_conn()
+
+    if username_exists(username):
         return False, "That username is already taken."
 
     salt = secrets.token_hex(16)
-    users[username] = {
-        "salt": salt,
-        "hash": _hash_password(password, salt),
-        "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    _save_users(users)
+    password_hash = _hash_password(password, salt)
+    created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with conn.session as s:
+        s.execute(
+            text(
+                "INSERT INTO users (username, salt, hash, created) "
+                "VALUES (:u, :s, :h, :c)"
+            ),
+            {"u": username, "s": salt, "h": password_hash, "c": created},
+        )
+        s.commit()
+
     return True, "Account created successfully."
 
 
 def verify_user(username: str, password: str) -> tuple[bool, str]:
     """Checks credentials. Returns (success, message)."""
     username = username.strip().lower()
-    users = _load_users()
+    conn = _get_conn()
 
-    record = users.get(username)
-    if not record:
+    df = conn.query(
+        "SELECT salt, hash FROM users WHERE username = :u",
+        params={"u": username},
+        ttl=0,
+    )
+    if df.empty:
         return False, "Invalid username or password."
 
+    record = df.iloc[0]
     if _hash_password(password, record["salt"]) != record["hash"]:
         return False, "Invalid username or password."
 
