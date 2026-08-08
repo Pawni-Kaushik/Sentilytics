@@ -29,7 +29,7 @@ import streamlit as st
 import pandas as pd
 from collections import Counter
 
-from utils.helpers import init_session_state, load_css, render_navbar, render_footer
+from utils.helpers import init_session_state, load_css, render_navbar, render_footer, render_html_table
 from utils.loader import load_model_artifacts
 from utils.predictor import predict_long_text
 from utils.charts import sentiment_pie_chart, word_cloud_chart
@@ -276,10 +276,8 @@ if "live_search_results" in st.session_state:
         st.caption("No results match this filter.")
     else:
         st.caption(f"Showing {len(display_df)} of {len(results_df)} results.")
-        st.dataframe(
-            display_df[["type", "text", "sentiment", "confidence", "chunks_analyzed", "source", "post_title"]],
-            width="stretch",
-            hide_index=True,
+        render_html_table(
+            display_df[["type", "text", "sentiment", "confidence", "chunks_analyzed", "source", "post_title"]]
         )
 
     st.download_button(

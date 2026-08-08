@@ -12,7 +12,7 @@ on this page retrains or re-evaluates live.
 
 import streamlit as st
 
-from utils.helpers import init_session_state, load_css, render_navbar, render_footer
+from utils.helpers import init_session_state, load_css, render_navbar, render_footer, render_html_table
 from utils.metrics import (
     get_headline_numbers, get_classification_report_df,
     get_confusion_matrix, get_training_history, get_roc_data,
@@ -61,7 +61,7 @@ st.write("")
 # Classification report table
 # ---------------------------------------------------------------
 st.markdown("#### Classification Report")
-st.dataframe(report_df, width="stretch", hide_index=True)
+render_html_table(report_df, highlight_last_rows=2)
 
 st.divider()
 

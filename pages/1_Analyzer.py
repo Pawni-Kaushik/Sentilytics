@@ -13,6 +13,7 @@ import pandas as pd
 from utils.helpers import (
     init_session_state, load_css, render_navbar, render_footer,
     add_to_history, get_history_df, clear_history, search_history,
+    render_html_table,
 )
 from utils.loader import load_model_artifacts
 from utils.predictor import predict_sentiment, get_top_contributing_words
@@ -100,7 +101,7 @@ if analyze_clicked:
             top_words = get_top_contributing_words(result["cleaned_text"], tokenizer)
             if top_words:
                 words_df = pd.DataFrame(top_words, columns=["Word", "Rarity Score"])
-                st.dataframe(words_df, width="stretch", hide_index=True)
+                render_html_table(words_df)
                 st.caption(
                     "Rarity Score (0-100): how uncommon this word was in the training "
                     "vocabulary. Rarer, more specific words tend to carry more sentiment "
@@ -170,7 +171,7 @@ if st.button("Analyze Batch"):
                         {percentages.get('neutral', 0.0)}%</div><div class="stat-label">Neutral</div></div>""",
                         unsafe_allow_html=True)
 
-        st.dataframe(results_df, width="stretch", hide_index=True)
+        render_html_table(results_df)
 
 st.divider()
 
@@ -227,7 +228,7 @@ else:
         st.caption("No predictions match this filter yet.")
     else:
         st.caption(f"Showing {len(filtered_df)} of {len(history_df)} predictions.")
-        st.dataframe(filtered_df, width="stretch", hide_index=True)
+        render_html_table(filtered_df)
 
     hist_col1, hist_col2 = st.columns([1, 5])
     with hist_col1:

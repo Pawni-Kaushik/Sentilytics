@@ -558,6 +558,47 @@ div[data-baseweb="menu"] {
     background-color: var(--surface-alt) !important;
 }
 
+/* ---------------- Themed HTML table (replaces st.dataframe where
+   guaranteed theme-matching is needed -- see render_html_table()) ---------------- */
+.themed-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.themed-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+}
+.themed-table thead th {
+    background: var(--surface-alt);
+    color: var(--text);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.themed-table tbody td {
+    background: var(--surface);
+    color: var(--text);
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+.themed-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.themed-table tbody tr:hover td {
+    background: var(--surface-alt);
+}
+.themed-table tbody tr.themed-table-highlight td {
+    font-weight: 600;
+    background: var(--surface-alt);
+}
+
 /* ---------------- st.caption() ---------------- */
 /* Had no rule at all previously -- it was using Streamlit's own
    native default caption color (built for a dark background),
