@@ -87,6 +87,21 @@ def load_css():
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
+def render_theme_toggle(key_suffix: str):
+    """
+    Renders just the Dark/Light toggle button, reusing the same
+    session_state.dark_mode flag and CSS variables everywhere it's
+    used -- inside the full navbar (post-login) via render_navbar(),
+    and standalone on the sign-in/register screen (pre-login), where
+    there's no navbar at all yet since the user isn't authenticated.
+    `key_suffix` keeps the widget key unique wherever it's placed.
+    """
+    mode_label = "☀️ Light" if st.session_state.dark_mode else "🌙 Dark"
+    if st.button(mode_label, key=f"theme_toggle_{key_suffix}", use_container_width=True):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
+
+
 def render_navbar(active: str):
     """
     Renders the sticky top navbar with links to every page.
@@ -109,10 +124,7 @@ def render_navbar(active: str):
             unsafe_allow_html=True,
         )
     with theme_col:
-        mode_label = "☀️ Light" if st.session_state.dark_mode else "🌙 Dark"
-        if st.button(mode_label, key=f"theme_toggle_{active}", use_container_width=True):
-            st.session_state.dark_mode = not st.session_state.dark_mode
-            st.rerun()
+        render_theme_toggle(active)
     with logout_col:
         if is_authenticated():
             if st.button("Logout", key=f"logout_{active}", use_container_width=True):

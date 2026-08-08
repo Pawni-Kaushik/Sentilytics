@@ -20,7 +20,7 @@ auto-naming the sidebar entry after the app.py filename.
 import streamlit as st
 
 from config import NAV_PAGES
-from utils.helpers import init_session_state, load_css
+from utils.helpers import init_session_state, load_css, render_theme_toggle
 from utils.auth import init_auth_state, is_authenticated, login, register_user, verify_user
 
 st.set_page_config(page_title="Sentilytics — Sentiment Analyzer", page_icon="▲", layout="wide")
@@ -35,6 +35,14 @@ load_css()
 # =================================================================
 def render_auth_screen():
     st.markdown('<div class="auth-wrap">', unsafe_allow_html=True)
+
+    # Theme toggle is available here too -- previously it only existed
+    # inside the post-login navbar, so there was no way to switch to a
+    # comfortable theme before signing in at all.
+    toggle_col, _spacer = st.columns([1.3, 4.7])
+    with toggle_col:
+        render_theme_toggle("auth_screen")
+
     st.markdown(
         """
         <div class="auth-eyebrow">▲ Sentilytics — Sentiment Analyzer</div>
