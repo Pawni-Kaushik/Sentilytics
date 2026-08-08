@@ -57,7 +57,7 @@ with dev_col2:
     st.markdown(
         """
         <div class="dev-card">
-            <div class="dev-avatar">KS</div>
+            <div class="dev-avatar dev-avatar-alt">KS</div>
             <div class="dev-name">Khushi Sharma</div>
             <div class="dev-role">Developer &middot; Internship Project 2026</div>
         </div>

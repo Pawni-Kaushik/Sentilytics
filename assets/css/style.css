@@ -30,7 +30,10 @@
 
 /* ---------------- Base app ---------------- */
 .stApp {
-    background: var(--bg);
+    background:
+        radial-gradient(circle at 12% 0%, var(--positive-glow), transparent 45%),
+        radial-gradient(circle at 100% 15%, var(--brand-glow), transparent 40%),
+        var(--bg);
     color: var(--text);
     font-family: var(--font-body);
 }
@@ -248,6 +251,33 @@ div.stButton > button:hover {
     color: white;
 }
 
+/* Topnav pills (theme toggle / logout) use the neutral honey and
+   clay accents instead of the brand pink, so the navbar reads as a
+   full palette rather than one repeated color everywhere. */
+div[class*="st-key-theme_toggle"] button {
+    background: var(--surface-alt) !important;
+    color: var(--neutral) !important;
+    border: 1px solid var(--neutral) !important;
+    box-shadow: none !important;
+}
+
+div[class*="st-key-theme_toggle"] button:hover {
+    background: var(--neutral) !important;
+    color: white !important;
+}
+
+div[class*="st-key-logout"] button {
+    background: var(--surface-alt) !important;
+    color: var(--negative) !important;
+    border: 1px solid var(--negative) !important;
+    box-shadow: none !important;
+}
+
+div[class*="st-key-logout"] button:hover {
+    background: var(--negative) !important;
+    color: white !important;
+}
+
 /* ---------------- Sentiment result cards ---------------- */
 .result-card {
     border-radius: 20px;
@@ -301,6 +331,7 @@ div.stButton > button:hover {
 .stat-tile {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-top: 3px solid var(--brand);
     border-radius: 14px;
     padding: 20px;
     text-align: center;
@@ -351,6 +382,10 @@ div.stButton > button:hover {
     font-size: 1.6rem;
     color: white;
     margin: 0 auto 16px auto;
+}
+
+.dev-avatar-alt {
+    background: linear-gradient(135deg, var(--positive), #9BCBB0);
 }
 
 .dev-name {
@@ -409,13 +444,19 @@ div.stButton > button:hover {
    the custom top navbar above is the single source of navigation, so
    there's no more mismatched/duplicate nav list on the left. */
 
-/* ---------------- Text areas & text inputs ---------------- */
+/* ---------------- Text areas & text inputs ----------------
+   Streamlit wraps the real <textarea>/<input> inside its own
+   data-baseweb wrapper div, which is what actually shows a visible
+   border -- styling only the inner element (as before) left that
+   wrapper on its own default black border, which is the stray black
+   box outline seen around the Analyzer input. Both are themed here,
+   with the border living on the wrapper only, so there's a single
+   clean edge instead of two competing ones. */
 .stTextArea textarea,
 .stTextInput input {
-    background: var(--surface) !important;
+    background: transparent !important;
     color: var(--text) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 10px !important;
+    border: none !important;
 }
 
 .stTextArea textarea::placeholder,
@@ -424,10 +465,18 @@ div.stButton > button:hover {
     opacity: 0.7;
 }
 
-.stTextArea textarea:focus,
-.stTextInput input:focus {
+div[data-baseweb="textarea"],
+div[data-baseweb="base-input"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+div[data-baseweb="textarea"]:focus-within,
+div[data-baseweb="base-input"]:focus-within {
     border-color: var(--brand) !important;
-    box-shadow: 0 0 0 1px var(--brand) !important;
+    box-shadow: 0 0 0 3px var(--brand-glow) !important;
 }
 
 /* ---------------- Select boxes (BaseWeb) ---------------- */
@@ -522,6 +571,11 @@ div[data-baseweb="menu"] {
     font-size: 0.82rem;
     color: var(--text-muted);
 }
+
+.badge-row .tech-badge:nth-child(4n+1) { border-color: var(--brand); color: var(--brand); }
+.badge-row .tech-badge:nth-child(4n+2) { border-color: var(--positive); color: var(--positive); }
+.badge-row .tech-badge:nth-child(4n+3) { border-color: var(--neutral); color: var(--neutral); }
+.badge-row .tech-badge:nth-child(4n+4) { border-color: var(--negative); color: var(--negative); }
 
 /* ---------------- Section label ---------------- */
 .section-eyebrow {
