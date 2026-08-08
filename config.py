@@ -51,31 +51,33 @@ PROJECT_YEAR = "2026"
 # Design tokens
 # ---------------------------------------------------------------
 COLORS = {
-    "brand_orange": "#FF4500",
-    "positive": "#2FB380",
-    "negative": "#7193FF",
-    "neutral": "#C9A227",
+    # Raspberry-pink brand accent (was a stock orange-red) and a soft,
+    # botanical sentiment palette -- sage for positive, warm clay for
+    # negative, honey for neutral -- instead of literal traffic-light
+    # red/green, which reads calmer for an emotion-analysis tool.
+    "brand_orange": "#D6487A",
+    "positive": "#6FAE8A",
+    "negative": "#C97C63",
+    "neutral": "#D9A66C",
 
-    "dark_bg": "#0B0E14",
-    "dark_surface": "#141821",
-    "dark_surface_alt": "#1B2029",
-    "dark_text": "#E9EBF0",
-    "dark_text_muted": "#8B93A3",
-    "dark_border": "#252B37",
-    # Glow/shadow intensity tuned per-mode: a 35%-opacity glow that
-    # reads as a nice neon accent on a near-black background turns
-    # into a muddy smear on white, so light mode uses softer values.
+    # Dark mode: a deep forest-charcoal instead of near-black, so it
+    # still pairs naturally with the sage/pink accents above.
+    "dark_bg": "#1C2620",
+    "dark_surface": "#23302A",
+    "dark_surface_alt": "#2B3B33",
+    "dark_text": "#F2EFE7",
+    "dark_text_muted": "#A6B0A3",
+    "dark_border": "#384A40",
     "dark_glow_alpha": "0.35",
 
-    # Light mode: a slightly deeper off-white than pure white so
-    # surfaces actually separate from the page background, plus a
-    # darker border/muted-text so elements don't wash out together.
-    "light_bg": "#F3F1EC",
+    # Light mode: warm ivory base (not stark white) so surfaces still
+    # separate from the page, with the same sage/pink/clay accents.
+    "light_bg": "#FBF8F4",
     "light_surface": "#FFFFFF",
-    "light_surface_alt": "#E9E6DE",
-    "light_text": "#1A1A1B",
-    "light_text_muted": "#555C68",
-    "light_border": "#D8D4CB",
+    "light_surface_alt": "#F1EDE3",
+    "light_text": "#2E332C",
+    "light_text_muted": "#767D72",
+    "light_border": "#E4DFD2",
     "light_glow_alpha": "0.16",
 }
 

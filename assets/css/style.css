@@ -14,14 +14,14 @@
     --text-muted: __TEXT_MUTED__;
     --border: __BORDER__;
 
-    --brand: #FF4500;
-    --brand-glow: rgba(255, 69, 0, __GLOW_ALPHA__);
-    --positive: #2FB380;
-    --positive-glow: rgba(47, 179, 128, __GLOW_ALPHA__);
-    --negative: #7193FF;
-    --negative-glow: rgba(113, 147, 255, __GLOW_ALPHA__);
-    --neutral: #C9A227;
-    --neutral-glow: rgba(201, 162, 39, __GLOW_ALPHA__);
+    --brand: #D6487A;
+    --brand-glow: rgba(214, 72, 122, __GLOW_ALPHA__);
+    --positive: #6FAE8A;
+    --positive-glow: rgba(111, 174, 138, __GLOW_ALPHA__);
+    --negative: #C97C63;
+    --negative-glow: rgba(201, 124, 99, __GLOW_ALPHA__);
+    --neutral: #D9A66C;
+    --neutral-glow: rgba(217, 166, 108, __GLOW_ALPHA__);
 
     --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
@@ -215,7 +215,7 @@ div[data-testid="stPageLink"] a div {
 /* ---------------- Buttons ---------------- */
 .cta-button {
     display: inline-block;
-    background: linear-gradient(135deg, var(--brand), #ff6a33);
+    background: linear-gradient(135deg, var(--brand), #EE84A0);
     color: white !important;
     font-weight: 600;
     font-size: 1rem;
@@ -232,7 +232,7 @@ div[data-testid="stPageLink"] a div {
 }
 
 div.stButton > button {
-    background: linear-gradient(135deg, var(--brand), #ff6a33);
+    background: linear-gradient(135deg, var(--brand), #EE84A0);
     color: white;
     border: none;
     border-radius: 10px;
@@ -342,7 +342,7 @@ div.stButton > button:hover {
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--brand), #ff6a33);
+    background: linear-gradient(135deg, var(--brand), #EE84A0);
     display: flex;
     align-items: center;
     justify-content: center;
