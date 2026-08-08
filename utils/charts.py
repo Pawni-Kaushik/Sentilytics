@@ -52,13 +52,30 @@ def _themed_layout(fig, dark: bool, height=380):
         # Small margins so charts use maximum space
         margin=dict(l=10, r=10, t=40, b=10),
 
-        # Transparent legend background
-        legend=dict(bgcolor="rgba(0,0,0,0)"),
+        # Legend: transparent background AND an explicit font color.
+        # Relying on the global `font` above to cascade down to the
+        # legend/axes isn't reliable across Plotly versions -- it was
+        # leaving legend and axis text almost invisible in light mode
+        # (rendering with a much lower-contrast default instead), so
+        # every sub-component gets the color explicitly here.
+        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=text_color)),
     )
 
-    # Make grid and zero lines match the current theme
-    fig.update_xaxes(gridcolor=grid_color, zerolinecolor=grid_color)
-    fig.update_yaxes(gridcolor=grid_color, zerolinecolor=grid_color)
+    # Make grid/zero lines match the theme, AND set tick + axis-title
+    # font color explicitly (same reason as the legend above).
+    fig.update_xaxes(
+        gridcolor=grid_color, zerolinecolor=grid_color,
+        tickfont=dict(color=text_color), title_font=dict(color=text_color),
+    )
+    fig.update_yaxes(
+        gridcolor=grid_color, zerolinecolor=grid_color,
+        tickfont=dict(color=text_color), title_font=dict(color=text_color),
+    )
+
+    # Trace-level text (e.g. a pie chart's "label + percent" slice
+    # text) has its own textfont, separate from the layout font --
+    # set explicitly so it doesn't fall back to a low-contrast default.
+    fig.update_traces(selector=dict(type="pie"), textfont=dict(color=text_color))
 
     return fig
 
