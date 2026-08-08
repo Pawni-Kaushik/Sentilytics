@@ -267,3 +267,66 @@ def roc_chart(roc_data: dict, dark: bool = True):
     )
 
     return _themed_layout(fig, dark, height=380)
+
+
+def word_cloud_chart(word_counts, dark: bool = True):
+    """
+    Builds a scatter-based word cloud: each word is placed on a spiral
+    around the center, with font size scaled to how often it appears.
+
+    word_counts: list of (word, count) tuples, most common first
+                 (e.g. from collections.Counter.most_common()).
+    """
+
+    if not word_counts:
+        return _themed_layout(go.Figure(), dark, height=380)
+
+    max_count = word_counts[0][1]
+    min_count = word_counts[-1][1]
+    count_range = max(max_count - min_count, 1)
+
+    # Alternate between brand colors so the cloud isn't monotone
+    palette = [
+        COLORS["brand_orange"],
+        COLORS["positive"],
+        COLORS["neutral"],
+        COLORS["negative"],
+    ]
+
+    xs, ys, sizes, colors, texts = [], [], [], [], []
+
+    # Places each word along an outward-growing spiral (Archimedean
+    # spiral) so bigger/more-frequent words tend to land near the
+    # center, with a little random jitter so it doesn't look too rigid.
+    angle_step = 0.6
+    radius_step = 2.2
+
+    for i, (word, count) in enumerate(word_counts):
+        angle = i * angle_step
+        radius = i * radius_step
+        jitter_x = random.uniform(-1.5, 1.5)
+        jitter_y = random.uniform(-1.5, 1.5)
+
+        xs.append(radius * math.cos(angle) + jitter_x)
+        ys.append(radius * math.sin(angle) + jitter_y)
+
+        # Scale font size between ~14 and ~48 based on frequency
+        normalized = (count - min_count) / count_range
+        sizes.append(14 + normalized * 34)
+
+        colors.append(palette[i % len(palette)])
+        texts.append(word)
+
+    fig = go.Figure(data=[go.Scatter(
+        x=xs,
+        y=ys,
+        mode="text",
+        text=texts,
+        textfont=dict(size=sizes, color=colors),
+        hoverinfo="text",
+    )])
+
+    fig.update_xaxes(visible=False, showgrid=False, zeroline=False)
+    fig.update_yaxes(visible=False, showgrid=False, zeroline=False)
+
+    return _themed_layout(fig, dark, height=380)
