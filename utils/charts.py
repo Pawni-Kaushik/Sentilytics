@@ -288,8 +288,13 @@ def roc_chart(roc_data: dict, dark: bool = True):
 
 def word_cloud_chart(word_counts, dark: bool = True):
     """
-    Builds a scatter-based word cloud: each word is placed on a spiral
-    around the center, with font size scaled to how often it appears.
+    Builds a scatter-based word cloud: each word is placed by searching
+    outward along a spiral until it finds a spot that doesn't overlap
+    any word already placed, so bigger/more-frequent words anchor near
+    the center and everything else packs in around them with real
+    spacing -- not just a fixed spiral position with no collision
+    check, which let words (especially the biggest ones near the
+    center) overlap each other.
 
     word_counts: list of (word, count) tuples, most common first
                  (e.g. from collections.Counter.most_common()).
@@ -310,27 +315,52 @@ def word_cloud_chart(word_counts, dark: bool = True):
         COLORS["negative"],
     ]
 
+    # Treat x/y coordinates as pixel-like units so a word's rendered
+    # footprint can be estimated directly from its font size -- this
+    # is what makes real collision-checking against other placed words
+    # possible, instead of guessing a spiral position blind.
+    CHAR_WIDTH_FACTOR = 0.62   # average glyph width as a fraction of font size
+    LINE_HEIGHT_FACTOR = 1.15
+    PADDING = 6                # minimum gap kept between any two words
+
+    def boxes_overlap(a, b):
+        ax0, ay0, ax1, ay1 = a
+        bx0, by0, bx1, by1 = b
+        return ax0 < bx1 and ax1 > bx0 and ay0 < by1 and ay1 > by0
+
+    placed_boxes = []
     xs, ys, sizes, colors, texts = [], [], [], [], []
 
-    # Places each word along an outward-growing spiral (Archimedean
-    # spiral) so bigger/more-frequent words tend to land near the
-    # center, with a little random jitter so it doesn't look too rigid.
-    angle_step = 0.6
-    radius_step = 2.2
-
     for i, (word, count) in enumerate(word_counts):
-        angle = i * angle_step
-        radius = i * radius_step
-        jitter_x = random.uniform(-1.5, 1.5)
-        jitter_y = random.uniform(-1.5, 1.5)
-
-        xs.append(radius * math.cos(angle) + jitter_x)
-        ys.append(radius * math.sin(angle) + jitter_y)
-
-        # Scale font size between ~14 and ~48 based on frequency
         normalized = (count - min_count) / count_range
-        sizes.append(14 + normalized * 34)
+        size = 14 + normalized * 34
 
+        half_w = (len(word) * size * CHAR_WIDTH_FACTOR) / 2 + PADDING
+        half_h = (size * LINE_HEIGHT_FACTOR) / 2 + PADDING
+
+        # Spiral outward from the center, testing each candidate spot
+        # against every word already placed, until a free one is found.
+        angle = random.uniform(0, math.tau)
+        radius = 0.0
+        angle_step = 0.45
+        radius_step = 2.6
+
+        cx, cy = 0.0, 0.0
+        for _ in range(800):
+            cx = radius * math.cos(angle)
+            cy = radius * math.sin(angle) * 0.65  # flatten slightly for a wider, less circular cloud
+            candidate = (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
+            if not any(boxes_overlap(candidate, existing) for existing in placed_boxes):
+                break
+            angle += angle_step
+            radius += radius_step
+        else:
+            candidate = (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
+
+        placed_boxes.append(candidate)
+        xs.append(cx)
+        ys.append(cy)
+        sizes.append(size)
         colors.append(palette[i % len(palette)])
         texts.append(word)
 
@@ -344,9 +374,13 @@ def word_cloud_chart(word_counts, dark: bool = True):
     )])
 
     fig.update_xaxes(visible=False, showgrid=False, zeroline=False)
-    fig.update_yaxes(visible=False, showgrid=False, zeroline=False)
+    # Lock the y-axis to the same scale as x (1:1) -- otherwise the
+    # chart container's own aspect ratio can stretch/squash one axis
+    # relative to the other, which would reintroduce visual overlap
+    # that the spacing calculation above already avoided in data-space.
+    fig.update_yaxes(visible=False, showgrid=False, zeroline=False, scaleanchor="x", scaleratio=1)
 
-    return _themed_layout(fig, dark, height=380)
+    return _themed_layout(fig, dark, height=420)
 
 
 def confidence_gauge(confidence: float, sentiment: str, dark: bool = True):
