@@ -330,3 +330,104 @@ def word_cloud_chart(word_counts, dark: bool = True):
     fig.update_yaxes(visible=False, showgrid=False, zeroline=False)
 
     return _themed_layout(fig, dark, height=380)
+
+
+def confidence_gauge(confidence: float, sentiment: str, dark: bool = True):
+    """
+    Circular gauge showing model confidence (0-100) for the predicted
+    sentiment, colored to match that sentiment.
+    """
+
+    color = SENTIMENT_COLOR_MAP.get(sentiment, COLORS["brand_orange"])
+    track_color = COLORS["dark_border"] if dark else COLORS["light_border"]
+
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=confidence,
+        number=dict(suffix="%", font=dict(color=color)),
+        gauge=dict(
+            axis=dict(range=[0, 100], tickcolor=track_color),
+            bar=dict(color=color),
+            bgcolor="rgba(0,0,0,0)",
+            borderwidth=1,
+            bordercolor=track_color,
+        ),
+    ))
+
+    return _themed_layout(fig, dark, height=260)
+
+
+def probability_bar_chart(probabilities, dark: bool = True):
+    """
+    Horizontal bar chart of per-class probabilities for a single
+    prediction. `probabilities` is a DataFrame with columns
+    "Sentiment" and "Probability" (0-100), as returned by
+    predict_sentiment().
+    """
+
+    labels = list(probabilities["Sentiment"])
+    values = list(probabilities["Probability"])
+    colors = [SENTIMENT_COLOR_MAP.get(l, "#999999") for l in labels]
+
+    fig = go.Figure(data=[go.Bar(
+        x=values,
+        y=labels,
+        orientation="h",
+        marker_color=colors,
+        text=[f"{v:.1f}%" for v in values],
+        textposition="outside",
+    )])
+
+    fig.update_xaxes(title="Probability (%)", range=[0, 100])
+
+    return _themed_layout(fig, dark, height=260)
+
+
+def word_frequency_chart(words, color: str = None, dark: bool = True):
+    """
+    Horizontal bar chart of the most common words for one sentiment
+    class. `words` is a list of (word, count) pairs, most common first
+    (e.g. from top_words_by_class[label] in the precomputed metrics).
+    """
+
+    bar_color = color or COLORS["brand_orange"]
+
+    # Reverse so the most common word ends up at the top of the chart
+    labels = [w for w, _ in words][::-1]
+    values = [c for _, c in words][::-1]
+
+    fig = go.Figure(data=[go.Bar(
+        x=values,
+        y=labels,
+        orientation="h",
+        marker_color=bar_color,
+    )])
+
+    fig.update_xaxes(title="Count")
+
+    return _themed_layout(fig, dark, height=max(340, 22 * len(words)))
+
+
+def length_histogram(bins, hist, dark: bool = True, color: str = None):
+    """
+    Bar chart for a precomputed histogram (e.g. character or word-count
+    length distribution). `bins` are the bin edges (len = len(hist)+1,
+    as returned by numpy.histogram); `hist` is the count per bin.
+    """
+
+    bar_color = color or COLORS["brand_orange"]
+
+    # Use bin centers as x so each bar sits between its edges
+    centers = [(bins[i] + bins[i + 1]) / 2 for i in range(len(hist))]
+
+    fig = go.Figure(data=[go.Bar(
+        x=centers,
+        y=hist,
+        marker_color=bar_color,
+    )])
+
+    fig.update_layout(bargap=0.05)
+    fig.update_xaxes(title="Length")
+    fig.update_yaxes(title="Count")
+
+    return _themed_layout(fig, dark, height=300)
