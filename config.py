@@ -76,7 +76,7 @@ COLORS = {
     "light_surface": "#FFFFFF",
     "light_surface_alt": "#F1EDE3",
     "light_text": "#2E332C",
-    "light_text_muted": "#767D72",
+    "light_text_muted": "#52584D",
     "light_border": "#E4DFD2",
     "light_glow_alpha": "0.16",
 }

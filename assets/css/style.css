@@ -463,7 +463,7 @@ div[class*="st-key-logout"] button:hover {
 .stTextArea textarea::placeholder,
 .stTextInput input::placeholder {
     color: var(--text-muted) !important;
-    opacity: 0.7;
+    opacity: 0.9;
 }
 
 div[data-baseweb="textarea"],
@@ -556,6 +556,17 @@ div[data-baseweb="menu"] {
 
 [data-testid="stProgress"] > div > div {
     background-color: var(--surface-alt) !important;
+}
+
+/* ---------------- st.caption() ---------------- */
+/* Had no rule at all previously -- it was using Streamlit's own
+   native default caption color (built for a dark background),
+   completely untouched by the app's own theme toggle. */
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p,
+.stCaption,
+.stCaption p {
+    color: var(--text-muted) !important;
 }
 
 /* ---------------- File uploader, radio, checkbox, slider labels ---------------- */
