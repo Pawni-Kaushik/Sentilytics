@@ -128,6 +128,40 @@ div[data-testid="stPageLink"] a div {
 }
 
 /* ---------------- Auth (Login / Register) ---------------- */
+/* Tabs (Sign In / Create Account) are Streamlit's own native widget
+   and had no theming at all -- the inactive tab's default text color
+   was almost the same as the page background (near-invisible in
+   light mode), and the active tab used Streamlit's built-in red
+   underline instead of the app's palette. */
+[data-testid="stTabs"] [data-baseweb="tab-list"],
+[data-testid="stTabs"] [role="tablist"] {
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+[data-testid="stTabs"] button[data-baseweb="tab"],
+[data-testid="stTabs"] button[role="tab"] {
+    background: transparent !important;
+}
+
+[data-testid="stTabs"] button[data-baseweb="tab"] p,
+[data-testid="stTabs"] button[role="tab"] p,
+[data-testid="stTabs"] button[data-baseweb="tab"],
+[data-testid="stTabs"] button[role="tab"] {
+    color: var(--text-muted) !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stTabs"] button[aria-selected="true"] p,
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: var(--brand) !important;
+}
+
+[data-testid="stTabs"] [data-baseweb="tab-highlight"],
+[data-testid="stTabs"] [data-baseweb="tab-border"] {
+    background-color: var(--brand) !important;
+}
+
 .auth-wrap {
     max-width: 420px;
     margin: 40px auto 0 auto;
