@@ -252,7 +252,14 @@ if "live_search_results" in st.session_state:
     if top_words:
         dark = st.session_state.get("dark_mode", True)
         cloud_fig = word_cloud_chart(top_words, dark=dark)
-        st.plotly_chart(cloud_fig, width="stretch")
+        # This chart is rendered at a fixed, deliberate pixel size (see
+        # word_cloud_chart's docstring) so its own overlap-avoidance
+        # math holds exactly -- letting Streamlit stretch it to the
+        # container width would rescale the axis-to-pixel ratio and
+        # bring the overlap back. Centered instead of stretched.
+        pad_l, center_col, pad_r = st.columns([1, 6, 1])
+        with center_col:
+            st.plotly_chart(cloud_fig, width="content")
     else:
         st.caption("Not enough distinct words to build a word cloud yet.")
 

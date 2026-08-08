@@ -373,14 +373,36 @@ def word_cloud_chart(word_counts, dark: bool = True):
         hoverinfo="text",
     )])
 
-    fig.update_xaxes(visible=False, showgrid=False, zeroline=False)
-    # Lock the y-axis to the same scale as x (1:1) -- otherwise the
-    # chart container's own aspect ratio can stretch/squash one axis
-    # relative to the other, which would reintroduce visual overlap
-    # that the spacing calculation above already avoided in data-space.
-    fig.update_yaxes(visible=False, showgrid=False, zeroline=False, scaleanchor="x", scaleratio=1)
+    # Fit the axis range to exactly the placed words' bounding extent
+    # (plus a little breathing room), then lock the figure's rendered
+    # pixel size to match that extent 1:1. Font sizes are always real
+    # screen pixels in Plotly regardless of axis zoom, so unless the
+    # chart's actual rendered width/height matches the data range
+    # exactly, the browser ends up re-scaling the data-to-pixel ratio
+    # (e.g. when Streamlit stretches the chart to fill a wide
+    # container) -- which silently shrinks the effective pixel-per-unit
+    # scale in the densest area and reintroduces overlap, even though
+    # the collision-avoidance placement above is provably overlap-free
+    # in data-space. Locking width/height to the data range removes
+    # that rescaling entirely.
+    margin = 40
+    x_min = min(b[0] for b in placed_boxes) - margin
+    x_max = max(b[2] for b in placed_boxes) + margin
+    y_min = min(b[1] for b in placed_boxes) - margin
+    y_max = max(b[3] for b in placed_boxes) + margin
 
-    return _themed_layout(fig, dark, height=420)
+    fig.update_xaxes(visible=False, showgrid=False, zeroline=False, range=[x_min, x_max])
+    fig.update_yaxes(
+        visible=False, showgrid=False, zeroline=False,
+        range=[y_min, y_max], scaleanchor="x", scaleratio=1,
+    )
+    fig.update_layout(
+        autosize=False,
+        width=int(x_max - x_min),
+        height=int(y_max - y_min),
+    )
+
+    return _themed_layout(fig, dark, height=int(y_max - y_min))
 
 
 def confidence_gauge(confidence: float, sentiment: str, dark: bool = True):
