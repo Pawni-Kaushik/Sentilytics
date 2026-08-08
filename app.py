@@ -52,9 +52,37 @@ def render_auth_screen():
     )
 
     st.markdown('<div class="auth-card">', unsafe_allow_html=True)
-    tab_login, tab_register = st.tabs(["Sign In", "Create Account"])
 
-    with tab_login:
+    # Streamlit's native st.tabs() ignores our custom theme entirely
+    # (its own default styling doesn't follow the light/dark toggle),
+    # so "Sign In" / "Create Account" is a manual toggle built from
+    # regular buttons instead -- those we can theme reliably.
+    if "auth_view" not in st.session_state:
+        st.session_state.auth_view = "login"
+
+    view_col1, view_col2 = st.columns(2)
+    with view_col1:
+        if st.button(
+            "Sign In",
+            key="auth_view_login",
+            type="primary" if st.session_state.auth_view == "login" else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state.auth_view = "login"
+            st.rerun()
+    with view_col2:
+        if st.button(
+            "Create Account",
+            key="auth_view_register",
+            type="primary" if st.session_state.auth_view == "register" else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state.auth_view = "register"
+            st.rerun()
+
+    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+
+    if st.session_state.auth_view == "login":
         username = st.text_input("Username", key="login_username", placeholder="Enter your username")
 
         # Password field first, "Show password" toggle directly below it.
@@ -81,7 +109,7 @@ def render_auth_screen():
                 else:
                     st.error(message)
 
-    with tab_register:
+    else:
         new_username = st.text_input("Username", key="reg_username", placeholder="Choose a username")
 
         show_pw_reg = st.session_state.get("reg_show_pw", False)
