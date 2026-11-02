@@ -85,6 +85,22 @@ def load_css():
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
+def render_theme_toggle(key_suffix: str):
+    """
+    Renders the Light/Dark toggle button. Used by the post-login navbar
+    AND by the Sign In / Register screen in app.py, so the theme can be
+    switched before logging in too.
+
+    key_suffix keeps each button's Streamlit widget key unique when the
+    toggle appears in more than one place (e.g. "auth_screen" or the
+    active page name).
+    """
+    mode_label = "☀️ Light" if st.session_state.dark_mode else "🌙 Dark"
+    if st.button(mode_label, key=f"theme_toggle_{key_suffix}", use_container_width=True):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
+
+
 def render_navbar(active: str):
     """
     Renders the sticky top navbar with links to every page.
@@ -107,10 +123,7 @@ def render_navbar(active: str):
             unsafe_allow_html=True,
         )
     with theme_col:
-        mode_label = "☀️ Light" if st.session_state.dark_mode else "🌙 Dark"
-        if st.button(mode_label, key=f"theme_toggle_{active}", use_container_width=True):
-            st.session_state.dark_mode = not st.session_state.dark_mode
-            st.rerun()
+        render_theme_toggle(active)
     with logout_col:
         if is_authenticated():
             if st.button("Logout", key=f"logout_{active}", use_container_width=True):
