@@ -27,10 +27,7 @@ METRICS_PATH = MODELS_DIR / "precomputed_metrics_v2.json"
 
 DATASET_PATH = DATASET_DIR / "reddit_sentiment_dataset_v9.csv"
 HISTORY_PATH = BASE_DIR / "prediction_history.csv"
-# NOTE: user accounts used to live in a local users.json, but Streamlit
-# Community Cloud's disk is ephemeral (wiped on sleep/restart/redeploy),
-# so accounts silently disappeared. Auth now uses a hosted Postgres DB
-# instead -- see utils/auth.py and DEPLOYMENT.md.
+USERS_PATH = BASE_DIR / "users.json"
 
 # --- NER model artifacts (person-name detection, used to mask names
 #     before sentiment analysis, e.g. "Happy Singh is sad") ---
@@ -44,41 +41,31 @@ NER_CONFIG_PATH = MODELS_DIR / "ner_config.json"
 # ---------------------------------------------------------------
 PROJECT_TITLE = "Sentilytics — Sentiment Analyzer"
 PROJECT_TAGLINE = "Reddit Sentiment Analysis using NLP and Neural Networks"
-DEVELOPERS = ["Pawni Kaushik", "Khushi Sharma"]
+DEVELOPERS = ["Pawni Kaushik", "Khushi Sharma", "Lakshay Kamboj"]
 PROJECT_YEAR = "2026"
 
 # ---------------------------------------------------------------
 # Design tokens
 # ---------------------------------------------------------------
 COLORS = {
-    # Raspberry-pink brand accent (was a stock orange-red) and a soft,
-    # botanical sentiment palette -- sage for positive, warm clay for
-    # negative, honey for neutral -- instead of literal traffic-light
-    # red/green, which reads calmer for an emotion-analysis tool.
-    "brand_orange": "#D6487A",
-    "positive": "#6FAE8A",
-    "negative": "#C97C63",
-    "neutral": "#D9A66C",
+    "brand_orange": "#FF4500",
+    "positive": "#2FB380",
+    "negative": "#7193FF",
+    "neutral": "#C9A227",
 
-    # Dark mode: a deep forest-charcoal instead of near-black, so it
-    # still pairs naturally with the sage/pink accents above.
-    "dark_bg": "#1C2620",
-    "dark_surface": "#23302A",
-    "dark_surface_alt": "#2B3B33",
-    "dark_text": "#F2EFE7",
-    "dark_text_muted": "#A6B0A3",
-    "dark_border": "#384A40",
-    "dark_glow_alpha": "0.35",
+    "dark_bg": "#0B0E14",
+    "dark_surface": "#141821",
+    "dark_surface_alt": "#1B2029",
+    "dark_text": "#E9EBF0",
+    "dark_text_muted": "#8B93A3",
+    "dark_border": "#252B37",
 
-    # Light mode: warm ivory base (not stark white) so surfaces still
-    # separate from the page, with the same sage/pink/clay accents.
-    "light_bg": "#FBF8F4",
+    "light_bg": "#FAF9F7",
     "light_surface": "#FFFFFF",
-    "light_surface_alt": "#F1EDE3",
-    "light_text": "#2E332C",
-    "light_text_muted": "#52584D",
-    "light_border": "#E4DFD2",
-    "light_glow_alpha": "0.16",
+    "light_surface_alt": "#F3F1ED",
+    "light_text": "#1A1A1B",
+    "light_text_muted": "#5F6672",
+    "light_border": "#E4E2DD",
 }
 
 FONTS = {

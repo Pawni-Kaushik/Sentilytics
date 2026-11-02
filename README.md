@@ -2,7 +2,7 @@
 
 *(Reddit Sentiment Analysis using NLP and Neural Networks)*
 
-Developed by **Pawni Kaushik** & **Khushi Sharma** — Internship Project 2026
+Developed by **Pawni Kaushik**, **Khushi Sharma** & **Lakshay Kamboj**
 
 A multipage Streamlit application for Reddit-style sentiment analysis, powered by
 a custom-trained TF-IDF + Neural Network model (no third-party sentiment APIs —

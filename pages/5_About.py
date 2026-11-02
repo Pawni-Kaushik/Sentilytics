@@ -39,7 +39,7 @@ st.write("")
 # Developer cards
 # ---------------------------------------------------------------
 st.markdown("### Developers")
-dev_col1, dev_col2 = st.columns(2)
+dev_col1, dev_col2, dev_col3 = st.columns(3)
 
 with dev_col1:
     st.markdown(
@@ -47,7 +47,7 @@ with dev_col1:
         <div class="dev-card">
             <div class="dev-avatar">PK</div>
             <div class="dev-name">Pawni Kaushik</div>
-            <div class="dev-role">Developer &middot; Internship Project 2026</div>
+            <div class="dev-role">Developer</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -57,9 +57,21 @@ with dev_col2:
     st.markdown(
         """
         <div class="dev-card">
-            <div class="dev-avatar dev-avatar-alt">KS</div>
+            <div class="dev-avatar">KS</div>
             <div class="dev-name">Khushi Sharma</div>
-            <div class="dev-role">Developer &middot; Internship Project 2026</div>
+            <div class="dev-role">Developer</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with dev_col3:
+    st.markdown(
+        """
+        <div class="dev-card">
+            <div class="dev-avatar">LK</div>
+            <div class="dev-name">Lakshay Kamboj</div>
+            <div class="dev-role">Developer</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -127,9 +139,8 @@ st.markdown("### Acknowledgements")
 st.markdown(
     """
     <div class="glass-card" style="color:var(--text-muted)">
-    Built as part of an NLP/Machine Learning internship project. Thanks to the
-    open-source NLTK, scikit-learn, TensorFlow, and Streamlit communities whose
-    tools made this possible.
+    Thanks to the open-source NLTK, scikit-learn, TensorFlow, and Streamlit
+    communities whose tools made this possible.
     </div>
     """,
     unsafe_allow_html=True,

@@ -67,7 +67,6 @@ def load_css():
             "__TEXT__": COLORS["dark_text"],
             "__TEXT_MUTED__": COLORS["dark_text_muted"],
             "__BORDER__": COLORS["dark_border"],
-            "__GLOW_ALPHA__": COLORS["dark_glow_alpha"],
         }
     else:
         tokens = {
@@ -77,7 +76,6 @@ def load_css():
             "__TEXT__": COLORS["light_text"],
             "__TEXT_MUTED__": COLORS["light_text_muted"],
             "__BORDER__": COLORS["light_border"],
-            "__GLOW_ALPHA__": COLORS["light_glow_alpha"],
         }
 
     css = CSS_PATH.read_text()
@@ -85,21 +83,6 @@ def load_css():
         css = css.replace(placeholder, value)
 
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-
-def render_theme_toggle(key_suffix: str):
-    """
-    Renders just the Dark/Light toggle button, reusing the same
-    session_state.dark_mode flag and CSS variables everywhere it's
-    used -- inside the full navbar (post-login) via render_navbar(),
-    and standalone on the sign-in/register screen (pre-login), where
-    there's no navbar at all yet since the user isn't authenticated.
-    `key_suffix` keeps the widget key unique wherever it's placed.
-    """
-    mode_label = "☀️ Light" if st.session_state.dark_mode else "🌙 Dark"
-    if st.button(mode_label, key=f"theme_toggle_{key_suffix}", use_container_width=True):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
 
 
 def render_navbar(active: str):
@@ -124,7 +107,10 @@ def render_navbar(active: str):
             unsafe_allow_html=True,
         )
     with theme_col:
-        render_theme_toggle(active)
+        mode_label = "☀️ Light" if st.session_state.dark_mode else "🌙 Dark"
+        if st.button(mode_label, key=f"theme_toggle_{active}", use_container_width=True):
+            st.session_state.dark_mode = not st.session_state.dark_mode
+            st.rerun()
     with logout_col:
         if is_authenticated():
             if st.button("Logout", key=f"logout_{active}", use_container_width=True):
@@ -141,59 +127,19 @@ def render_navbar(active: str):
 
 
 def render_footer():
+    if len(DEVELOPERS) > 1:
+        devs_str = ", ".join(DEVELOPERS[:-1]) + " &amp; " + DEVELOPERS[-1]
+    else:
+        devs_str = DEVELOPERS[0]
     st.markdown(
         f"""
         <div class="app-footer">
             {PROJECT_TITLE}<br>
-            Built by {DEVELOPERS[0]} &amp; {DEVELOPERS[1]} &middot; Internship Project 2026
+            Built by {devs_str}
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-
-import html as _html
-
-
-def render_html_table(df, highlight_last_rows: int = 0):
-    """
-    Renders a DataFrame as a plain, theme-aware HTML table.
-
-    st.dataframe() is NOT a normal styleable element -- Streamlit
-    renders it internally as a <canvas> grid (glide-data-grid) for
-    performance, so no amount of CSS can recolor individual cells; it
-    stays tied to Streamlit's own native theme detection (the user's
-    OS/browser dark-mode setting), completely independent of this
-    app's own light/dark toggle -- the same root cause documented for
-    native icons elsewhere in style.css. A plain HTML table, rendered
-    via st.markdown like the rest of the app's custom UI, uses our own
-    --surface/--text/--border variables and so always matches
-    correctly.
-
-    `highlight_last_rows`: number of trailing rows (e.g. summary/
-    average rows) to render with slightly bolder styling.
-    """
-    n_rows = len(df)
-    header_html = "".join(f"<th>{_html.escape(str(col))}</th>" for col in df.columns)
-
-    body_rows = []
-    for i, row in enumerate(df.itertuples(index=False)):
-        row_class = "themed-table-highlight" if i >= n_rows - highlight_last_rows else ""
-        # Escape every cell -- table content can include news-article
-        # text or user-submitted text containing &, <, > which would
-        # otherwise break the table's HTML or render as stray markup.
-        cells = "".join(f"<td>{_html.escape(str(val))}</td>" for val in row)
-        body_rows.append(f'<tr class="{row_class}">{cells}</tr>')
-
-    html = f"""
-    <div class="themed-table-wrap">
-        <table class="themed-table">
-            <thead><tr>{header_html}</tr></thead>
-            <tbody>{''.join(body_rows)}</tbody>
-        </table>
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
 
 
 def add_to_history(original_text: str, result: dict):
