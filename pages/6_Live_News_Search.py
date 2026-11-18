@@ -95,7 +95,7 @@ col1, col2 = st.columns([3, 1])
 with col1:
     query = st.text_input(
         "Search keyword",
-        placeholder="e.g. Maruti Suzuki, iPhone 17, or any topic",
+        placeholder="e.g. iPhone 17, or any topic",
         label_visibility="collapsed",
     )
 with col2:

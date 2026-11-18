@@ -20,7 +20,7 @@ st.markdown(
     """
     <div class="hero-wrap">
         <div class="hero-eyebrow">Two self-trained neural networks &middot; Zero third-party AI APIs</div>
-        <div class="hero-title">Know the room<br>before you <span class="accent">post</span>.</div>
+        <div class="hero-title">Know<br>before you <span class="accent">post</span>.</div>
         <div class="hero-subtitle">
             Paste any text and get an instant Positive / Negative / Neutral verdict,
             powered by a custom-trained Bidirectional LSTM and a dedicated Named

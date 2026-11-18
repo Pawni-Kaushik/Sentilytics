@@ -21,7 +21,7 @@ st.markdown(
         <h4>{PROJECT_TITLE}</h4>
         <p style="color:var(--text-muted); font-size:0.95rem; margin-top:-6px;">{PROJECT_TAGLINE}</p>
         <p style="color:var(--text-muted)">
-        This project analyzes the sentiment of Reddit-style posts and comments using a
+        This project analyzes the sentiment of GNews using a
         custom-trained neural network -- no third-party sentiment APIs, no HuggingFace,
         no OpenAI. Every prediction comes from a TF-IDF vectorizer and neural network
         trained from scratch on a manually assembled Reddit-style dataset (over 20,000
@@ -53,29 +53,6 @@ with dev_col1:
         unsafe_allow_html=True,
     )
 
-with dev_col2:
-    st.markdown(
-        """
-        <div class="dev-card">
-            <div class="dev-avatar">KS</div>
-            <div class="dev-name">Khushi Sharma</div>
-            <div class="dev-role">Developer</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with dev_col3:
-    st.markdown(
-        """
-        <div class="dev-card">
-            <div class="dev-avatar">LK</div>
-            <div class="dev-name">Lakshay Kamboj</div>
-            <div class="dev-role">Developer</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 st.write("")
 st.divider()

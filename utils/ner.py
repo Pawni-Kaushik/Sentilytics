@@ -15,8 +15,7 @@ import pickle
 import json
 import numpy as np
 import streamlit as st
-import tensorflow as tf
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+from utils.keras_compat import load_model, pad_sequences
 
 from config import NER_MODEL_PATH, NER_WORD2IDX_PATH, NER_IDX2TAG_PATH, NER_CONFIG_PATH
 
@@ -24,7 +23,7 @@ from config import NER_MODEL_PATH, NER_WORD2IDX_PATH, NER_IDX2TAG_PATH, NER_CONF
 @st.cache_resource
 def load_ner_artifacts():
     """Loads and caches the trained NER model, word2idx map, idx2tag map, and config."""
-    model = tf.keras.models.load_model(NER_MODEL_PATH)
+    model = load_model(NER_MODEL_PATH)
 
     with open(NER_WORD2IDX_PATH, "rb") as f:
         word2idx = pickle.load(f)

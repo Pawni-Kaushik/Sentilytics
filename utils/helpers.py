@@ -155,6 +155,89 @@ def render_footer():
     )
 
 
+def render_html_table(df: pd.DataFrame, highlight_last_rows: int = 0, max_height_px: int = 520):
+    """
+    Renders a DataFrame as a themed HTML table that follows the
+    light/dark toggle (st.dataframe ignores the custom theme).
+
+    - highlight_last_rows: bolds and tints the last N rows (used for the
+      "macro avg" / "weighted avg" rows of the classification report).
+    - Cells equal to positive/negative/neutral are colored like the
+      sentiment tiles.
+    - All cell text is HTML-escaped, so article/comment text can't break
+      the page, and "$" is escaped so it isn't treated as math.
+    - Wide tables scroll inside the box instead of stretching the page.
+    """
+    import html as _html
+
+    if df is None or len(df) == 0:
+        st.caption("No data to show.")
+        return
+
+    dark = st.session_state.get("dark_mode", True)
+    prefix = "dark" if dark else "light"
+    surface = COLORS[f"{prefix}_surface"]
+    surface_alt = COLORS[f"{prefix}_surface_alt"]
+    text = COLORS[f"{prefix}_text"]
+    muted = COLORS[f"{prefix}_text_muted"]
+    border = COLORS[f"{prefix}_border"]
+
+    sentiment_colors = {
+        "positive": "var(--positive, #22c55e)",
+        "negative": "var(--negative, #ef4444)",
+        "neutral": "var(--neutral, #94a3b8)",
+    }
+
+    def fmt(value) -> str:
+        if value is None or (isinstance(value, float) and value != value):  # None / NaN
+            return ""
+        if isinstance(value, float):
+            return f"{value:.2f}"
+        return str(value)
+
+    def cell(value, tag="td", extra_style="") -> str:
+        raw = fmt(value).replace("\r", " ").replace("\n", " ")
+        safe = _html.escape(raw).replace("$", "&#36;")
+        color_style = ""
+        if tag == "td" and raw.strip().lower() in sentiment_colors:
+            color_style = f"color:{sentiment_colors[raw.strip().lower()]};font-weight:600;"
+        return (
+            f'<{tag} style="padding:8px 12px;border-bottom:1px solid {border};'
+            f'text-align:left;vertical-align:top;overflow-wrap:anywhere;{color_style}{extra_style}">'
+            f"{safe}</{tag}>"
+        )
+
+    # Show the index too when it carries information (e.g. class names in a
+    # classification report); skip it for a plain 0..n-1 index.
+    show_index = not (isinstance(df.index, pd.RangeIndex) or list(df.index) == list(range(len(df))))
+
+    header_cells = ""
+    if show_index:
+        header_cells += cell(df.index.name or "", tag="th", extra_style=f"color:{muted};")
+    for col in df.columns:
+        header_cells += cell(col, tag="th", extra_style=f"color:{muted};font-weight:600;white-space:nowrap;")
+
+    n_rows = len(df)
+    body_rows = ""
+    for pos, (idx, row) in enumerate(df.iterrows()):
+        highlighted = highlight_last_rows > 0 and pos >= n_rows - highlight_last_rows
+        row_style = f"background:{surface_alt};font-weight:700;" if highlighted else ""
+        cells = cell(idx) if show_index else ""
+        cells += "".join(cell(v) for v in row.tolist())
+        body_rows += f'<tr style="{row_style}">{cells}</tr>'
+
+    # One unbroken line: blank lines or indentation inside st.markdown can make
+    # the markdown parser treat parts of the HTML as a code block.
+    table_html = (
+        f'<div style="max-height:{max_height_px}px;overflow:auto;border:1px solid {border};'
+        f'border-radius:10px;background:{surface};color:{text};margin:4px 0 12px 0;">'
+        f'<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">'
+        f'<thead style="position:sticky;top:0;background:{surface};"><tr>{header_cells}</tr></thead>'
+        f"<tbody>{body_rows}</tbody></table></div>"
+    )
+    st.markdown(table_html, unsafe_allow_html=True)
+
+
 def add_to_history(original_text: str, result: dict):
     """Appends a prediction result to the session's history log, and saves it to disk."""
     st.session_state.prediction_history.append({

@@ -40,8 +40,8 @@ NER_CONFIG_PATH = MODELS_DIR / "ner_config.json"
 # Project metadata
 # ---------------------------------------------------------------
 PROJECT_TITLE = "Sentilytics — Sentiment Analyzer"
-PROJECT_TAGLINE = "Reddit Sentiment Analysis using NLP and Neural Networks"
-DEVELOPERS = ["Pawni Kaushik", "Khushi Sharma", "Lakshay Kamboj"]
+PROJECT_TAGLINE = "GNews Sentiment Analysis using NLP and Neural Networks"
+DEVELOPERS = ["Pawni Kaushik"]
 PROJECT_YEAR = "2026"
 
 # ---------------------------------------------------------------

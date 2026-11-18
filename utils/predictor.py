@@ -21,7 +21,7 @@ import nltk                    # NLTK -- gives us VADER (a ready-made sentiment 
 import numpy as np             # numpy -- array math (probabilities, rounding, sorting)
 import pandas as pd            # pandas -- used to build the "probabilities" table returned to callers
 from nltk.sentiment import SentimentIntensityAnalyzer          # VADER's actual analyzer class
-from tensorflow.keras.preprocessing.sequence import pad_sequences  # pads/truncates token sequences to a fixed length
+from utils.keras_compat import pad_sequences  # pads/truncates token sequences to a fixed length
 
 # Our own project helpers (from other files in utils/):
 from utils.preprocessing import clean_text     # lowercases + strips punctuation/stopwords etc.
@@ -283,205 +283,126 @@ POSITIVE_SIGNAL_PHRASES = {
     "assurance", "clarifications assuring", "counter growing backlash",
 }
 
-# How much a single matched lexicon phrase "counts for", expressed in the
-# same units as a chunk's word-count weight. E.g. LEXICON_VOTE_WEIGHT = 12
-# means: one matched phrase in a chunk pulls as much weight toward its
-# class as a 12-word chunk of plain model output would.
-LEXICON_VOTE_WEIGHT = 12  # how much one matched domain phrase counts, in "words," alongside model chunks
 
-# Multiplier applied to VADER's per-chunk vote. NOT a flat constant --
-# it's applied on top of the chunk's own word-count weight (see
-# predict_long_text below), so VADER's influence scales up/down together
-# with the model's influence for that same chunk, instead of staying fixed
-# while the model's vote grows with chunk length.
-VADER_VOTE_WEIGHT = 1.6   # multiplier on VADER's per-chunk opinion, scaled BY THAT CHUNK'S OWN WORD-COUNT
-                          # WEIGHT (see predict_long_text) -- not a flat constant. A flat constant let the
-                          # model's own (word-count-scaled) vote drown out VADER on any chunk longer than
-                          # ~15 words, which is most real sentences. Scaling VADER by the same per-chunk
-                          # weight puts it on equal (and, via the >1 multiplier, slightly favoured) footing
-                          # with the model for every chunk length -- important because the model was trained
-                          # almost entirely on 1-2 sentence snippets and is a known weaker signal on long,
-                          # out-of-distribution text like news articles (its own held-out precision on the
-                          # "positive" class is ~78%, i.e. it mislabels real negative/neutral text as
-                          # positive noticeably often -- see models/precomputed_metrics_v2.json).
+# ---------------------------------------------------------------------
+# How much each signal source is trusted (must sum to 1.0 before the
+# lexicon boost is folded in).
+#
+# WHY VADER, SCORED ON THE WHOLE TEXT, LEADS:
+# Testing against real, formally-worded text (news articles, not the
+# short synthetic Reddit-style snippets the model was trained on) showed
+# two things:
+#   1. The raw LSTM confidently mis-scores plainly neutral factual
+#      sentences on its own -- e.g. "This car uses a diesel engine" ->
+#      64% negative, "The company said it will appeal" -> 94.5%
+#      positive. It has real signal on short, casual text, but isn't
+#      reliable enough on real-world prose to lead.
+#   2. Scoring VADER sentence-by-sentence and averaging loses the
+#      whole-document context VADER's own algorithm uses, so a clearly
+#      negative multi-paragraph article can average out to a coin-flip.
+#      Running VADER on the FULL text once recovers that.
+# ---------------------------------------------------------------------
+MODEL_WEIGHT = 0.15
+VADER_WEIGHT = 0.85
+NEUTRAL_ZONE = 0.35            # |compound| at/above this is treated as fully decided, not neutral
+LEXICON_OVERRIDE_WEIGHT = 0.5  # how much one matched phrase adds, in the same 0-1 probability space
 
 
-def _vader_vote(chunk_text: str):
+def _vader_distribution(text: str, zone: float = NEUTRAL_ZONE):
     """
-    Scores a chunk with VADER (a general-purpose lexicon + rule-based
-    sentiment tool built for informal/social-media text -- 7,500+ words,
-    handles negation, intensifiers, slang, punctuation/caps emphasis).
+    Converts VADER's compound score (-1..1) into a 3-way probability
+    distribution (positive/neutral/negative) instead of a hard
+    threshold pick. Below `zone`, the unresolved magnitude is neutral,
+    so weak/ambiguous signals land near neutral. At or above `zone`,
+    VADER is confident enough that the full weight goes to that side.
 
-    Unlike NEGATIVE_SIGNAL_PHRASES/POSITIVE_SIGNAL_PHRASES above (a small
-    hand-picked list that only helps posts using those exact phrases),
-    VADER is a broad, pre-built lexicon -- this is what makes the fix
-    generalize to other posts/comments/topics, not just this one example.
-
-    Returns (label, strength 0-1). label is "positive", "negative", or
-    "neutral" -- VADER's near-zero-compound case is its most confident
-    signal that a chunk is genuinely neutral, so it now counts as a real
-    vote for the neutral class too (previously it returned (None, 0.0) and
-    was thrown away, which meant neutral had NO source of extra evidence
-    anywhere in the ensemble -- only positive/negative got lexicon+VADER
-    reinforcement -- so a genuinely neutral chunk almost never won against
-    the model's own noisy per-chunk guess).
+    Returns (dist_dict, compound_score).
     """
-    # VADER's "compound" score is a single number from -1 (most negative)
-    # to +1 (most positive), summarizing the whole chunk's sentiment.
-    compound = _vader.polarity_scores(chunk_text)["compound"]
+    compound = _vader.polarity_scores(text)["compound"]
+    if compound == 0:
+        return {"positive": 0.0, "neutral": 1.0, "negative": 0.0}, compound
 
-    if compound >= 0.05:
-        # Clearly positive by VADER's own convention (>= 0.05 threshold).
-        # Strength = the compound score itself (bigger = more confident).
-        return "positive", compound
-
-    if compound <= -0.05:
-        # Clearly negative. Strength = absolute value (so it's always positive/0-1-ish).
-        return "negative", -compound
-
-    # Near-zero compound: strength scales with how close to dead-zero it
-    # is (1.0 exactly at compound=0, tapering to 0 at the +/-0.05 edges).
-    # i.e. compound == 0   -> strength = 1.0 (VADER is very sure it's neutral)
-    #      compound == 0.05 or -0.05 -> strength = 0.0 (right at the edge, no real signal)
-    return "neutral", 1.0 - (abs(compound) / 0.05)
+    magnitude = min(abs(compound) / zone, 1.0)
+    neutral_share = 1.0 - magnitude
+    if compound > 0:
+        dist = {"positive": magnitude, "neutral": neutral_share, "negative": 0.0}
+    else:
+        dist = {"positive": 0.0, "neutral": neutral_share, "negative": magnitude}
+    return dist, compound
 
 
 def predict_long_text(text: str, model, tokenizer, encoder, max_chunk_words: int = 30):
     """
-    Sentiment for long-form text (full Reddit posts/comments spanning
-    several sentences), by scoring each sentence-sized chunk with
-    predict_sentiment() individually and combining the results --
-    instead of feeding the entire post through as one giant sequence.
+    Sentiment for long-form text (posts/comments/articles spanning
+    several sentences).
 
-    Three things make the "one giant sequence" approach unreliable for
-    long, real-world posts specifically:
-      1. The model's training data is almost entirely 1-2 sentence
-         snippets (median 3 words, max 35 words ever seen in training).
-      2. max_len=40 truncates anything longer anyway, silently dropping
-         everything past the first ~40 tokens.
-      3. Real complaint/praise vocabulary is likely missing from the
-         model's vocabulary entirely, and a bias toward certain repeated
-         words (e.g. brand/product names) can show up across MANY
-         sentences of the same post, not just one -- so per-chunk
-         scoring alone can still be outvoted by that bias.
+    The final verdict blends:
+      - VADER, scored on the WHOLE text at once (_vader_distribution):
+        the PRIMARY signal for real, formally-worded text.
+      - The trained LSTM, scored per sentence-sized chunk and
+        length-weight-averaged: a MINORITY signal, since it's only
+        reliable on short, casual, Reddit-style text. Chunking still
+        matters here because max_len=40 would otherwise silently
+        truncate a long text.
+      - NEGATIVE_SIGNAL_PHRASES / POSITIVE_SIGNAL_PHRASES: unambiguous
+        phrases that boost the blend when matched anywhere in the text.
 
-    This function addresses (1) and (2) by chunking + a length-weighted
-    average, and (3) by blending in two extra signals alongside the
-    model's own chunk predictions:
-      - NEGATIVE_SIGNAL_PHRASES / POSITIVE_SIGNAL_PHRASES: a small,
-        hand-curated list for a few very common complaint/praise phrases.
-      - VADER (_vader_vote): a broad, general-purpose sentiment lexicon
-        that generalizes across topics/wording, not just the specific
-        phrases above -- this is what makes the fix work for OTHER
-        long posts and comments too, not only the one it was tested on.
-
-    None of these override the model -- they add weighted votes to the
-    same aggregation, so the final verdict reflects all three sources
-    together.
-
-    Returns the same shape as predict_sentiment(), plus:
-      - chunk_results: list of per-chunk (text, prediction, confidence),
-        useful for showing "why" a long post got its overall verdict.
+    Returns the same shape as predict_sentiment(), plus chunk_results
+    (the model's per-chunk predictions, kept for the "why" breakdown).
     """
-    # Step 1: break the long text into small, model-friendly chunks.
     chunks = _split_into_chunks(text, max_chunk_words)
-
-    chunk_results = []
-    for chunk in chunks:
-        # Step 2: run the normal single-text pipeline on EACH chunk individually.
-        result = predict_sentiment(chunk, model, tokenizer, encoder)
-
-        if result["is_oov"]:
-            # This chunk had literally no recognizable vocabulary at all --
-            # skip it entirely rather than let a meaningless "neutral 0%"
-            # guess dilute the overall vote.
-            continue
-
-        chunk_results.append((chunk, result))
+    chunk_results = [(chunk, predict_sentiment(chunk, model, tokenizer, encoder)) for chunk in chunks]
 
     if not chunk_results:
-        # Every single chunk was OOV/unusable -- there's nothing to vote
-        # with. Fall back to running the plain whole-text prediction so the
-        # caller still gets SOME result instead of an empty/broken response.
         fallback = predict_sentiment(text, model, tokenizer, encoder)
         fallback["chunk_results"] = []
         return fallback
 
-    # Weight each chunk's contribution by its word count, so a throwaway
-    # short chunk doesn't outweigh a substantial one. Lexicon phrase
-    # matches and VADER's opinion add extra weighted votes on top of this.
-    labels = list(encoder.classes_)                       # e.g. ["negative", "neutral", "positive"]
-    weighted_probs = {label: 0.0 for label in labels}      # running weighted total per class, starts at 0
-    total_weight = 0.0                                     # running total of ALL weight added (for normalizing later)
+    labels = list(encoder.classes_)
 
+    model_probs = {label: 0.0 for label in labels}
+    total_weight = 0.0
     for chunk, result in chunk_results:
-        # --- (A) Base vote: the model's own per-chunk prediction ---
-        # Longer chunks get proportionally more "say" in the final vote
-        # (a 20-word chunk matters more than a 3-word chunk).
-        weight = max(len(chunk.split()), 1)   # word count of this chunk (at least 1, to avoid zero-weight)
+        weight = max(len(chunk.split()), 1)
         total_weight += weight
-
-        # Add this chunk's own probability table into the running totals,
-        # scaled by its weight.
         for _, row in result["probabilities"].iterrows():
-            weighted_probs[row["Sentiment"]] += row["Probability"] * weight
-
-        # --- (B) Extra vote: hand-curated phrase lists ---
-        chunk_lower = chunk.lower()
-        # Count how many negative/positive phrases from our lists appear in this chunk.
-        neg_hits = sum(1 for phrase in NEGATIVE_SIGNAL_PHRASES if phrase in chunk_lower)
-        pos_hits = sum(1 for phrase in POSITIVE_SIGNAL_PHRASES if phrase in chunk_lower)
-
-        if neg_hits and "negative" in weighted_probs:
-            # Each matched phrase acts like a mini "100%-confident vote"
-            # worth LEXICON_VOTE_WEIGHT words, added directly to "negative".
-            bonus = neg_hits * LEXICON_VOTE_WEIGHT
-            weighted_probs["negative"] += 100.0 * bonus
-            total_weight += bonus   # must also add to total_weight so the final normalization stays correct
-
-        if pos_hits and "positive" in weighted_probs:
-            bonus = pos_hits * LEXICON_VOTE_WEIGHT
-            weighted_probs["positive"] += 100.0 * bonus
-            total_weight += bonus
-
-        # --- (C) Extra vote: VADER's opinion on this same chunk ---
-        vader_label, vader_strength = _vader_vote(chunk)
-        if vader_label and vader_label in weighted_probs and vader_strength > 0:
-            # Scaled by `weight` (this chunk's own word count) so VADER's say is
-            # proportional to the model's say on the SAME chunk, not a flat
-            # constant that only mattered for short chunks. See VADER_VOTE_WEIGHT
-            # comment above for why.
-            bonus = weight * vader_strength * VADER_VOTE_WEIGHT
-            weighted_probs[vader_label] += 100.0 * bonus
-            total_weight += bonus
-
-    # Step 3: normalize -- divide every class's accumulated weighted total
-    # by the grand total weight, turning raw sums back into 0-100 percentages.
+            model_probs[row["Sentiment"]] += (row["Probability"] / 100.0) * weight
     for label in labels:
-        weighted_probs[label] /= total_weight
+        model_probs[label] /= total_weight
 
-    # Step 4: build the final probabilities table for display.
+    vader_dist, _ = _vader_distribution(text)
+
+    blended = {
+        label: MODEL_WEIGHT * model_probs.get(label, 0.0) + VADER_WEIGHT * vader_dist.get(label, 0.0)
+        for label in labels
+    }
+
+    text_lower = text.lower()
+    neg_hits = sum(1 for phrase in NEGATIVE_SIGNAL_PHRASES if phrase in text_lower)
+    pos_hits = sum(1 for phrase in POSITIVE_SIGNAL_PHRASES if phrase in text_lower)
+    if neg_hits and "negative" in blended:
+        blended["negative"] += neg_hits * LEXICON_OVERRIDE_WEIGHT
+    if pos_hits and "positive" in blended:
+        blended["positive"] += pos_hits * LEXICON_OVERRIDE_WEIGHT
+
+    blend_total = sum(blended.values()) or 1.0
+    weighted_probs = {label: (blended[label] / blend_total) * 100.0 for label in labels}
+
     probabilities = pd.DataFrame({
         "Sentiment": labels,
         "Probability": [weighted_probs[l] for l in labels],
     })
 
-    # Step 5: the winning class is whichever has the highest weighted percentage.
     pred_label = max(weighted_probs, key=weighted_probs.get)
     confidence = weighted_probs[pred_label]
 
     return {
         "prediction": pred_label,
         "confidence": confidence,
-        # Combine every chunk's own masked/cleaned text into one string,
-        # separated by " | ", so the caller can see what was actually fed
-        # into the model across all chunks.
         "masked_text": " | ".join(r["masked_text"] for _, r in chunk_results),
         "cleaned_text": " | ".join(r["cleaned_text"] for _, r in chunk_results),
         "probabilities": probabilities,
         "is_oov": False,
-        # Per-chunk breakdown -- lets the UI show WHY the overall post got
-        # its final verdict (e.g. "3 of 5 chunks were negative").
         "chunk_results": [
             {"chunk": c, "prediction": r["prediction"], "confidence": round(r["confidence"], 1)}
             for c, r in chunk_results

@@ -1,0 +1,6 @@
+timestamp,text,sentiment,confidence
+2026-11-17 10:42:19,I am Pawni,neutral,0.0
+2026-11-17 10:42:38,"I am Pawni, I am sad",negative,99.1
+2026-11-17 10:58:43,The food was not good,negative,96.2
+2026-11-17 12:12:23,"hey Rahul, how are you doing today",negative,90.5
+2026-11-17 12:13:40,rahul you are such a bad person,negative,99.2

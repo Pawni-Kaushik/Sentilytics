@@ -1,10 +1,9 @@
 # Sentilytics — Sentiment Analyzer
 
-*(Reddit Sentiment Analysis using NLP and Neural Networks)*
+*(GNews using NLP and Neural Networks)*
 
-Developed by **Pawni Kaushik**, **Khushi Sharma** & **Lakshay Kamboj**
-
-A multipage Streamlit application for Reddit-style sentiment analysis, powered by
+Developed by **Pawni Kaushik**
+A multipage Streamlit application for GNews sentiment analysis, powered by
 a custom-trained TF-IDF + Neural Network model (no third-party sentiment APIs —
 not HuggingFace, not OpenAI, not any external sentiment service).
 

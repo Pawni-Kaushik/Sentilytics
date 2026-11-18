@@ -11,15 +11,15 @@ We only load what was already trained in the v2 notebook.
 import pickle
 import json
 import streamlit as st
-import tensorflow as tf
 
 from config import MODEL_PATH, TOKENIZER_PATH, ENCODER_PATH, METRICS_PATH
+from utils.keras_compat import load_model
 
 
 @st.cache_resource
 def load_model_artifacts():
     """Loads and caches the trained model, Tokenizer, and label encoder."""
-    model = tf.keras.models.load_model(MODEL_PATH)
+    model = load_model(MODEL_PATH)
 
     with open(TOKENIZER_PATH, "rb") as f:
         tokenizer = pickle.load(f)
